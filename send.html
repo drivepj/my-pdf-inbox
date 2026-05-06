@@ -13,6 +13,7 @@
         input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
         button:disabled { background: #ccc; }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #666; text-decoration: none; }
     </style>
 </head>
 <body>
@@ -21,19 +22,20 @@
         <h2>📤 อัปโหลดและส่งเอกสาร</h2>
         <form id="uploadForm">
             <label>จาก (Sender):</label>
-            <input type="email" id="sender" required>
+            <input type="email" id="sender" placeholder="อีเมลของคุณ" required>
 
             <label>ถึง (Receiver):</label>
-            <input type="email" id="receiver" required>
+            <input type="email" id="receiver" placeholder="อีเมลผู้รับ" required>
 
             <label>หัวข้อเรื่อง (Subject):</label>
-            <input type="text" id="subject" required>
+            <input type="text" id="subject" placeholder="หัวข้อเอกสาร" required>
 
             <label>เลือกไฟล์ PDF:</label>
             <input type="file" id="fileInput" accept=".pdf" required>
 
             <button type="submit" id="submitBtn">📤 เริ่มอัปโหลดและส่ง</button>
         </form>
+        <a href="index.html" class="back-link">← กลับไปหน้า Inbox</a>
     </div>
 
     <script>
@@ -52,10 +54,12 @@
             btn.disabled = true;
 
             try {
-                // 1. สร้างชื่อไฟล์ใหม่ไม่ให้ซ้ำ (กันไฟล์ชื่อเดียวกันทับกัน)
-                const fileName = Date.now() + '_' + file.name;
+                // ✅ แก้ไข: ดึงแค่นามสกุลไฟล์ (เช่น pdf) และตั้งชื่อใหม่เป็นตัวเลข
+                // เพื่อป้องกันปัญหาชื่อไฟล์ภาษาไทยที่ทำให้เกิด Error "Invalid key"
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
 
-                // 2. อัปโหลดไฟล์ไปที่ Storage Bucket ชื่อ 'pdf-files'
+                // 1. อัปโหลดไฟล์ไปที่ Storage Bucket ชื่อ 'pdf-files'
                 const { data: uploadData, error: uploadError } = await supabaseClient
                     .storage
                     .from('pdf-files')
@@ -63,7 +67,7 @@
 
                 if (uploadError) throw uploadError;
 
-                // 3. ดึง URL ของไฟล์ที่เพิ่งอัปโหลดไป
+                // 2. ดึง URL ของไฟล์ที่เพิ่งอัปโหลดไป
                 const { data: urlData } = supabaseClient
                     .storage
                     .from('pdf-files')
@@ -71,7 +75,7 @@
 
                 const finalFileUrl = urlData.publicUrl;
 
-                // 4. บันทึกข้อมูลลงตาราง documents เหมือนเดิม
+                // 3. บันทึกข้อมูลลงตาราง documents
                 const { error: insertError } = await supabaseClient
                     .from('documents')
                     .insert([{ 
