@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ส่งไฟล์จริงขึ้น Cloud</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f2f5; }
+        .form-container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #1a73e8; }
+        label { display: block; margin: 10px 0 5px; font-weight: bold; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:disabled { background: #ccc; }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>📤 อัปโหลดและส่งเอกสาร</h2>
+        <form id="uploadForm">
+            <label>จาก (Sender):</label>
+            <input type="email" id="sender" required>
+
+            <label>ถึง (Receiver):</label>
+            <input type="email" id="receiver" required>
+
+            <label>หัวข้อเรื่อง (Subject):</label>
+            <input type="text" id="subject" required>
+
+            <label>เลือกไฟล์ PDF:</label>
+            <input type="file" id="fileInput" accept=".pdf" required>
+
+            <button type="submit" id="submitBtn">📤 เริ่มอัปโหลดและส่ง</button>
+        </form>
+    </div>
+
+    <script>
+        const SB_URL = 'https://ijxeejypdjwwnejjbxbq.supabase.co'; 
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeGVlanlwZGp3d25lampieGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDA0NzIsImV4cCI6MjA5MzYxNjQ3Mn0.NHCzfKueKHdA763QBWZ_civHzUSUcie9aUqBBt7Yrek'; 
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+        const form = document.getElementById('uploadForm');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const file = document.getElementById('fileInput').files[0];
+            
+            btn.innerText = '⏳ กำลังอัปโหลดไฟล์...';
+            btn.disabled = true;
+
+            try {
+                // 1. สร้างชื่อไฟล์ใหม่ไม่ให้ซ้ำ (กันไฟล์ชื่อเดียวกันทับกัน)
+                const fileName = Date.now() + '_' + file.name;
+
+                // 2. อัปโหลดไฟล์ไปที่ Storage Bucket ชื่อ 'pdf-files'
+                const { data: uploadData, error: uploadError } = await supabaseClient
+                    .storage
+                    .from('pdf-files')
+                    .upload(fileName, file);
+
+                if (uploadError) throw uploadError;
+
+                // 3. ดึง URL ของไฟล์ที่เพิ่งอัปโหลดไป
+                const { data: urlData } = supabaseClient
+                    .storage
+                    .from('pdf-files')
+                    .getPublicUrl(fileName);
+
+                const finalFileUrl = urlData.publicUrl;
+
+                // 4. บันทึกข้อมูลลงตาราง documents เหมือนเดิม
+                const { error: insertError } = await supabaseClient
+                    .from('documents')
+                    .insert([{ 
+                        sender: document.getElementById('sender').value,
+                        receiver: document.getElementById('receiver').value,
+                        subject: document.getElementById('subject').value,
+                        file_url: finalFileUrl 
+                    }]);
+
+                if (insertError) throw insertError;
+
+                alert('✅ อัปโหลดและส่งเอกสารสำเร็จ!');
+                form.reset();
+
+            } catch (error) {
+                alert('❌ เกิดข้อผิดพลาด: ' + error.message);
+                console.error(error);
+            } finally {
+                btn.innerText = '📤 เริ่มอัปโหลดและส่ง';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My PDF Inbox</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background: #f0f2f5; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { text-align: center; color: #1a73e8; }
+        .card { 
+            background: white; 
+            padding: 20px; 
+            margin-bottom: 15px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-left: 5px solid #1a73e8;
+        }
+        .sender { color: #5f6368; font-size: 0.9em; margin-bottom: 5px; }
+        .subject { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; }
+        .btn { 
+            display: inline-block; 
+            padding: 10px 20px; 
+            background: #1a73e8; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 6px;
+        }
+        #loading { text-align: center; color: #666; margin-top: 50px; }
+        .empty-state { text-align: center; padding: 40px; color: #999; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>📩 กล่องจดหมายเข้า (Inbox)</h1>
+        <div id="loading">🔍 กำลังตรวจสอบตู้จดหมาย...</div>
+        <div id="inbox-list"></div>
+    </div>
+
+    <script>
+        // ใช้ค่าของคุณที่ตรวจสอบแล้วว่าถูกต้องครับ
+        const SB_URL = 'https://ijxeejypdjwwnejjbxbq.supabase.co'; 
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeGVlanlwZGp3d25lampieGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDA0NzIsImV4cCI6MjA5MzYxNjQ3Mn0.NHCzfKueKHdA763QBWZ_civHzUSUcie9aUqBBt7Yrek'; 
+
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+        async function loadData() {
+            const loadingDiv = document.getElementById('loading');
+            const listDiv = document.getElementById('inbox-list');
+
+            try {
+                // แก้ไขโดยการตัด .order('created_at') ออก เพื่อไม่ให้เกิด Error
+                const { data, error } = await supabaseClient
+                    .from('documents')
+                    .select('*');
+
+                loadingDiv.style.display = 'none';
+
+                if (error) {
+                    listDiv.innerHTML = `<div class="card" style="border-left-color: red;">
+                        <b>เกิดข้อผิดพลาด:</b> ${error.message}
+                    </div>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    listDiv.innerHTML = '<div class="empty-state">📭 ยังไม่มีจดหมายส่งถึงคุณในตอนนี้</div>';
+                    return;
+                }
+
+                listDiv.innerHTML = data.map(item => `
+                    <div class="card">
+                        <div class="sender">จาก: ${item.sender || 'ไม่ระบุผู้ส่ง'}</div>
+                        <div class="subject">${item.subject || 'ไม่มีหัวข้อ'}</div>
+                        <a href="${item.file_url}" target="_blank" class="btn">👁️ เปิดอ่านเอกสาร PDF</a>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                loadingDiv.innerHTML = "❌ ไม่สามารถเชื่อมต่อได้";
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
