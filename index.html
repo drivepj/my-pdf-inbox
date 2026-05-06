@@ -2,52 +2,46 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Inbox | Gmail Style</title>
+    <title>Inbox | PDF Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
         body { font-family: 'Google Sans', sans-serif; background-color: #f6f8fc; overflow: hidden; }
-        .sidebar-item:hover { background-color: #eaf1fb; }
-        .active-menu { background-color: #d3e3fd; font-weight: bold; color: #041e49; }
-        /* ซ่อน scrollbar แต่ยังเลื่อนได้ */
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .sidebar-item:hover { background-color: #eaf1fb; color: #041e49; }
+        .active-menu { background-color: #d3e3fd; color: #041e49; font-weight: 500; }
     </style>
 </head>
 <body class="h-screen flex flex-col">
 
     <header class="h-16 flex items-center px-4 justify-between bg-[#f6f8fc]">
-        <div class="flex items-center gap-4 min-w-[240px] pl-2">
+        <div class="flex items-center gap-4 min-w-[240px]">
             <i class="fa-solid fa-bars p-3 hover:bg-gray-200 rounded-full cursor-pointer text-gray-600"></i>
-            <span class="text-xl text-gray-600 font-medium">Inbox</span>
+            <span class="text-xl text-gray-600 font-medium">PDF Inbox</span>
         </div>
         
         <div class="flex-1 max-w-3xl">
             <div class="relative group">
                 <i class="fa-solid fa-magnifying-glass absolute left-5 top-3.5 text-gray-500"></i>
-                <input type="email" id="myEmail" placeholder="ระบุอีเมลของคุณเพื่อค้นหา..." 
+                <input type="email" id="searchEmail" placeholder="ค้นหาด้วยอีเมลผู้รับ..." 
                     class="w-full pl-14 pr-4 py-3 bg-[#eaf1fb] border-none rounded-full focus:bg-white focus:shadow-md transition-all outline-none"
                     onkeypress="if(event.key === 'Enter') loadData()">
             </div>
         </div>
 
-        <div class="flex items-center gap-2 min-w-[240px] justify-end pr-4">
-            <button onclick="loadData()" class="bg-blue-700 text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-blue-800 transition-all">ค้นหา</button>
+        <div class="min-w-[240px] flex justify-end pr-4">
+            <button onclick="loadData()" class="bg-blue-700 text-white px-8 py-2 rounded-full font-bold hover:bg-blue-800 shadow-sm transition-all">ค้นหา</button>
         </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden px-4 pb-4 gap-2">
         <aside class="w-64 flex flex-col gap-1 pt-2">
-            <a href="send.html" class="flex items-center gap-4 w-fit px-6 py-4 bg-[#c2e7ff] hover:shadow-md rounded-2xl mb-4 transition-all text-[#041e49] font-medium ml-2">
+            <a href="send.html" class="flex items-center gap-4 w-fit px-6 py-4 bg-[#c2e7ff] hover:shadow-lg rounded-2xl mb-4 text-[#041e49] font-bold ml-2 transition-all">
                 <i class="fa-solid fa-pencil text-xl"></i> เขียน
             </a>
             <div class="sidebar-item active-menu flex items-center gap-4 px-6 py-2.5 rounded-full cursor-pointer text-sm">
                 <i class="fa-solid fa-inbox text-lg"></i> กล่องจดหมาย
-            </div>
-            <div class="sidebar-item flex items-center gap-4 px-6 py-2.5 rounded-full cursor-pointer text-sm text-gray-600">
-                <i class="fa-regular fa-star text-lg"></i> ติดดาว
             </div>
             <div class="sidebar-item flex items-center gap-4 px-6 py-2.5 rounded-full cursor-pointer text-sm text-gray-600">
                 <i class="fa-regular fa-paper-plane text-lg"></i> ส่งแล้ว
@@ -55,23 +49,17 @@
         </aside>
 
         <main class="flex-1 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-            <div class="flex items-center p-3 gap-6 text-gray-500 border-b border-gray-50 px-6">
-                <div class="flex items-center gap-2 hover:bg-gray-100 p-1 px-2 rounded cursor-pointer">
-                    <input type="checkbox" id="selectAll" class="w-4 h-4 rounded border-gray-300 cursor-pointer">
-                    <i class="fa-solid fa-caret-down text-[10px]"></i>
-                </div>
-                <i class="fa-solid fa-rotate-right hover:bg-gray-100 p-2 rounded-full cursor-pointer" onclick="loadData()"></i>
-                <i class="fa-solid fa-ellipsis-vertical hover:bg-gray-100 p-2 rounded-full cursor-pointer px-3"></i>
+            <div class="p-3 border-b border-gray-50 flex items-center gap-6 px-6 text-gray-400">
+                <input type="checkbox" class="rounded border-gray-300 cursor-pointer">
+                <i class="fa-solid fa-rotate-right hover:text-gray-600 cursor-pointer" onclick="loadData()"></i>
             </div>
-
-            <div id="inbox-list" class="overflow-y-auto flex-1 hide-scrollbar">
-                <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center p-10">
-                    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/empty/empty_inbox_2x.png" class="w-64 opacity-50 mb-6">
-                    <h3 class="text-xl font-medium text-gray-800">ตู้จดหมายว่างเปล่า</h3>
-                    <p class="text-gray-500">กรอกอีเมลผู้รับด้านบนเพื่อดึงเอกสาร PDF</p>
+            
+            <div id="inbox-list" class="overflow-y-auto flex-1">
+                <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center">
+                    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/empty/empty_inbox_2x.png" class="w-64 opacity-50 mb-4">
+                    <p class="text-gray-500">พิมพ์อีเมลในช่องค้นหาเพื่อดูเอกสารของคุณ</p>
                 </div>
-
-                <div id="list-container" class="hidden"></div>
+                <div id="list-content" class="hidden"></div>
             </div>
         </main>
     </div>
@@ -82,19 +70,13 @@
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
         async function loadData() {
-            const email = document.getElementById('myEmail').value.trim();
-            const listContainer = document.getElementById('list-container');
+            const email = document.getElementById('searchEmail').value.trim();
+            if (!email) return alert("กรุณาใส่เมลที่ต้องการค้นหา");
+
+            const listContent = document.getElementById('list-content');
             const emptyState = document.getElementById('empty-state');
 
-            if (!email) return;
-
-            // แสดงสถานะการโหลด
-            listContainer.innerHTML = '<div class="p-20 text-center text-gray-400">กำลังดึงข้อมูล...</div>';
-            listContainer.classList.remove('hidden');
-            emptyState.classList.add('hidden');
-
             try {
-                // ค้นหาไฟล์ที่ receiver = อีเมลที่กรอก
                 const { data, error } = await supabaseClient
                     .from('documents')
                     .select('*')
@@ -104,53 +86,44 @@
                 if (error) throw error;
 
                 if (!data || data.length === 0) {
-                    listContainer.classList.add('hidden');
                     emptyState.classList.remove('hidden');
+                    listContent.classList.add('hidden');
                     return;
                 }
 
-                // สั่งแสดงผลข้อมูล
-                listContainer.innerHTML = data.map(item => `
-                    <div class="flex items-center gap-4 px-4 py-2.5 border-b border-gray-100 hover:bg-gray-100 transition-all group cursor-pointer relative">
-                        <div class="flex items-center gap-3 min-w-[80px] flex-shrink-0">
-                            <input type="checkbox" class="w-4 h-4 rounded border-gray-300">
-                            <i class="fa-regular fa-star text-gray-300 hover:text-yellow-400 text-lg transition-colors"></i>
-                        </div>
+                emptyState.classList.add('hidden');
+                listContent.classList.remove('hidden');
 
+                listContent.innerHTML = data.map(item => `
+                    <div class="flex items-center gap-4 px-4 py-2 border-b border-gray-100 hover:bg-gray-100 transition-all group relative cursor-pointer">
+                        <div class="flex items-center gap-3 min-w-[80px]">
+                            <input type="checkbox" class="rounded border-gray-300">
+                            <i class="fa-regular fa-star text-gray-300 hover:text-yellow-400"></i>
+                        </div>
                         <div class="flex flex-1 items-center gap-6 min-w-0">
-                            <span class="font-bold text-gray-900 w-48 truncate flex-shrink-0">${item.sender}</span>
-                            
+                            <span class="font-bold text-gray-900 w-48 truncate text-sm">${item.sender}</span>
                             <div class="flex-1 truncate">
-                                <span class="font-bold text-gray-900">${item.subject}</span>
-                                <span class="text-gray-500 font-normal"> - ไฟล์เอกสาร PDF ได้รับการนำส่งเข้าระบบเรียบร้อยแล้ว</span>
+                                <span class="font-bold text-gray-800 text-sm">${item.subject}</span>
+                                <span class="text-gray-500 text-sm font-normal"> - ไฟล์ PDF พร้อมใช้งานแล้ว</span>
                             </div>
                         </div>
-
-                        <div class="flex items-center gap-4 text-xs font-bold text-gray-600 group-hover:invisible flex-shrink-0">
-                            <i class="fa-solid fa-paperclip text-gray-400"></i>
-                            <span>${new Date().toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</span>
+                        <div class="flex items-center gap-4 text-xs font-bold text-gray-400 group-hover:invisible">
+                            <i class="fa-solid fa-paperclip"></i>
+                            <span>${new Date(item.created_at).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</span>
                         </div>
-
                         <div class="absolute right-4 hidden group-hover:flex items-center gap-1 bg-gray-100 pl-4">
-                            <a href="${item.file_url}" target="_blank" class="p-2 hover:bg-white rounded-full text-blue-600 shadow-sm" title="ดูไฟล์">
-                                <i class="fa-solid fa-eye"></i>
-                            </a>
-                            <button onclick="deleteDoc(${item.id})" class="p-2 hover:bg-white rounded-full text-red-500 shadow-sm" title="ลบ">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
+                            <a href="${item.file_url}" target="_blank" class="p-2 hover:bg-white rounded-full text-blue-600 shadow-sm"><i class="fa-solid fa-eye"></i></a>
+                            <button onclick="deleteDoc(${item.id})" class="p-2 hover:bg-white rounded-full text-red-500 shadow-sm"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>
                 `).join('');
-
-            } catch (err) {
-                alert('เกิดข้อผิดพลาด: ' + err.message);
-            }
+            } catch (err) { alert(err.message); }
         }
 
         async function deleteDoc(id) {
-            if (!confirm('ยืนยันการลบไฟล์นี้?')) return;
+            if (!confirm('ต้องการลบไฟล์นี้ใช่หรือไม่?')) return;
             const { error } = await supabaseClient.from('documents').delete().eq('id', id);
-            if (!error) loadData(); // รีโหลดเมื่อลบสำเร็จ
+            if (!error) loadData();
         }
     </script>
 </body>
