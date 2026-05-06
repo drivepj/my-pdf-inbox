@@ -3,152 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inbox | PDF Management</title>
+    <title>PDF Inbox | Modern UI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
-        body { font-family: 'Google Sans', sans-serif; background-color: #f6f8fc; overflow: hidden; }
-        .sidebar-item:hover { background-color: #eaf1fb; color: #041e49; }
-        .active-menu { background-color: #d3e3fd; color: #041e49; font-weight: 500; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #1a73e8;
+            --surface: #f8fafd;
+            --sidebar-hover: #e1e9f5;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f0f4f9; 
+            color: #1f1f1f;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .search-bar:focus-within {
+            background: white !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transform: translateY(-1px);
+        }
+
+        .mail-item {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mail-item:hover {
+            box-shadow: inset 4px 0 0 var(--primary), 0 4px 12px rgba(0,0,0,0.05);
+            background-color: #f2f6fc;
+            z-index: 10;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="h-screen flex flex-col">
 
-    <header class="h-16 flex items-center px-4 justify-between bg-[#f6f8fc]">
-        <div class="flex items-center gap-4 min-w-[240px]">
-            <i class="fa-solid fa-bars p-3 hover:bg-gray-200 rounded-full cursor-pointer text-gray-600"></i>
-            <span class="text-xl text-gray-600 font-medium">PDF Inbox</span>
+    <header class="h-20 flex items-center px-8 justify-between">
+        <div class="flex items-center gap-3 min-w-[240px]">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+                <i class="fa-solid fa-file-pdf text-white text-lg"></i>
+            </div>
+            <span class="text-xl font-bold tracking-tight text-gray-800">Cloud<span class="text-blue-600">PDF</span></span>
         </div>
         
-        <div class="flex-1 max-w-3xl">
-            <div class="relative group">
-                <i class="fa-solid fa-magnifying-glass absolute left-5 top-3.5 text-gray-500"></i>
-                <input type="email" id="searchEmail" placeholder="ค้นหาด้วยอีเมลผู้รับ..." 
-                    class="w-full pl-14 pr-4 py-3 bg-[#eaf1fb] border-none rounded-full focus:bg-white focus:shadow-md transition-all outline-none"
+        <div class="flex-1 max-w-2xl px-4">
+            <div class="search-bar relative group flex items-center bg-white/80 rounded-2xl transition-all duration-300 border border-transparent">
+                <i class="fa-solid fa-magnifying-glass absolute left-5 text-gray-400 group-focus-within:text-blue-500"></i>
+                <input type="email" id="searchEmail" placeholder="Search by recipient email..." 
+                    class="w-full pl-14 pr-32 py-4 bg-transparent border-none rounded-2xl outline-none text-sm"
                     onkeypress="if(event.key === 'Enter') loadData()">
+                <button onclick="loadData()" class="absolute right-2 bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-100">
+                    Search
+                </button>
             </div>
         </div>
 
-        <div class="min-w-[240px] flex justify-end pr-4">
-            <button onclick="loadData()" class="bg-blue-700 text-white px-8 py-2 rounded-full font-bold hover:bg-blue-800 shadow-sm transition-all">ค้นหา</button>
+        <div class="min-w-[240px] flex justify-end gap-3">
+            <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 cursor-pointer hover:bg-gray-50">
+                <i class="fa-solid fa-circle-question text-gray-500"></i>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 shadow-md"></div>
         </div>
     </header>
 
-    <div class="flex flex-1 overflow-hidden px-4 pb-4 gap-2">
-        <aside class="w-64 flex flex-col gap-1 pt-2">
-            <a href="send.html" class="flex items-center gap-4 w-fit px-6 py-4 bg-[#c2e7ff] hover:shadow-lg rounded-2xl mb-4 text-[#041e49] font-bold ml-2 transition-all">
-                <i class="fa-solid fa-pencil text-xl"></i> เขียน
+    <div class="flex flex-1 overflow-hidden px-6 pb-6 gap-6">
+        <aside class="w-64 flex flex-col gap-2 pt-2">
+            <a href="send.html" class="flex items-center justify-center gap-3 w-full py-4 bg-white text-blue-600 hover:text-white hover:bg-blue-600 rounded-2xl mb-6 font-bold transition-all shadow-sm border border-blue-100 hover:shadow-blue-200 hover:shadow-lg">
+                <i class="fa-solid fa-plus text-lg"></i> Compose
             </a>
-            <div class="sidebar-item active-menu flex items-center gap-4 px-6 py-2.5 rounded-full cursor-pointer text-sm">
-                <i class="fa-solid fa-inbox text-lg"></i> กล่องจดหมาย
-            </div>
-            <div class="sidebar-item flex items-center gap-4 px-6 py-2.5 rounded-full cursor-pointer text-sm text-gray-600">
-                <i class="fa-regular fa-paper-plane text-lg"></i> ส่งแล้ว
-            </div>
+            
+            <nav class="space-y-1">
+                <div class="flex items-center gap-4 px-6 py-3 bg-blue-50 text-blue-700 rounded-xl cursor-pointer font-semibold shadow-sm border border-blue-100/50">
+                    <i class="fa-solid fa-inbox text-lg"></i> Inbox
+                </div>
+                <div class="flex items-center gap-4 px-6 py-3 text-gray-500 hover:bg-white rounded-xl cursor-pointer transition-all">
+                    <i class="fa-regular fa-paper-plane text-lg"></i> Sent
+                </div>
+                <div class="flex items-center gap-4 px-6 py-3 text-gray-500 hover:bg-white rounded-xl cursor-pointer transition-all">
+                    <i class="fa-regular fa-star text-lg"></i> Starred
+                </div>
+                <div class="flex items-center gap-4 px-6 py-3 text-gray-500 hover:bg-white rounded-xl cursor-pointer transition-all">
+                    <i class="fa-regular fa-trash-can text-lg"></i> Trash
+                </div>
+            </nav>
         </aside>
 
-        <main class="flex-1 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-            <div class="p-3 border-b border-gray-50 flex items-center gap-6 px-6 text-gray-400">
-                <input type="checkbox" class="rounded border-gray-300 cursor-pointer">
-                <i class="fa-solid fa-rotate-right hover:text-gray-600 cursor-pointer" onclick="loadData()"></i>
+        <main class="flex-1 glass-card rounded-[2rem] shadow-xl shadow-gray-200/50 flex flex-col overflow-hidden border border-white">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between px-8 bg-white/50">
+                <div class="flex items-center gap-6">
+                    <input type="checkbox" class="w-4 h-4 rounded accent-blue-600 cursor-pointer">
+                    <button onclick="loadData(true)" class="text-gray-400 hover:text-blue-600 transition-colors">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <div class="h-4 w-[1px] bg-gray-200"></div>
+                    <span class="text-xs font-medium text-gray-400 uppercase tracking-wider">Your Documents</span>
+                </div>
+                <div class="flex items-center gap-2 text-gray-400 text-sm">
+                    <span id="result-count">0 messages</span>
+                </div>
             </div>
             
             <div id="inbox-list" class="overflow-y-auto flex-1">
-                <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center">
-                    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/empty/empty_inbox_2x.png" class="w-64 opacity-50 mb-4" alt="empty">
-                    <p class="text-gray-500">พิมพ์อีเมลในช่องค้นหาเพื่อดูเอกสารของคุณ</p>
+                <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center p-12">
+                    <div class="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-envelope-open text-blue-200 text-5xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">Clean Workspace</h3>
+                    <p id="status-text" class="text-gray-400 max-w-xs">Enter an email to fetch documents or wait for automatic update.</p>
                 </div>
-                <div id="list-content" class="hidden"></div>
+                
+                <div id="list-content" class="hidden">
+                    </div>
             </div>
         </main>
     </div>
 
-    <script>
-        const SB_URL = 'https://ijxeejypdjwwnejjbxbq.supabase.co'; 
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeGVlanlwZGp3d25lampieGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDA0NzIsImV4cCI6MjA5MzYxNjQ3Mn0.NHCzfKueKHdA763QBWZ_civHzUSUcie9aUqBBt7Yrek'; 
-        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-
-        async function loadData() {
-            const emailInput = document.getElementById('searchEmail');
-            const email = emailInput.value.trim();
-            
-            if (!email) {
-                alert("กรุณากรอกอีเมลเพื่อค้นหา");
-                return;
-            }
-
-            const listContent = document.getElementById('list-content');
-            const emptyState = document.getElementById('empty-state');
-
-            try {
-                // ใช้ .ilike แทน .eq เพื่อป้องกันเรื่องตัวพิมพ์เล็ก-ใหญ่
-                const { data, error } = await supabaseClient
-                    .from('documents')
-                    .select('*')
-                    .ilike('receiver', email)
-                    .order('id', { ascending: false });
-
-                if (error) throw error;
-
-                if (!data || data.length === 0) {
-                    emptyState.classList.remove('hidden');
-                    listContent.classList.add('hidden');
-                    return;
-                }
-
-                emptyState.classList.add('hidden');
-                listContent.classList.remove('hidden');
-
-                listContent.innerHTML = data.map(item => `
-                    <div class="flex items-center gap-4 px-4 py-2 border-b border-gray-100 hover:bg-gray-100 transition-all group relative cursor-pointer">
-                        <div class="flex items-center gap-3 min-w-[80px]">
-                            <input type="checkbox" class="rounded border-gray-300">
-                            <i class="fa-regular fa-star text-gray-300 hover:text-yellow-400"></i>
-                        </div>
-                        <div class="flex flex-1 items-center gap-6 min-w-0">
-                            <span class="font-bold text-gray-900 w-48 truncate text-sm">${item.sender}</span>
-                            <div class="flex-1 truncate">
-                                <span class="font-bold text-gray-800 text-sm">${item.subject}</span>
-                                <span class="text-gray-500 text-sm font-normal"> - ไฟล์ PDF พร้อมใช้งานแล้ว</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4 text-xs font-bold text-gray-400 group-hover:invisible">
-                            <i class="fa-solid fa-paperclip"></i>
-                            <span>${new Date(item.created_at).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</span>
-                        </div>
-                        <div class="absolute right-4 hidden group-hover:flex items-center gap-1 bg-gray-100 pl-4">
-                            <a href="${item.file_url}" target="_blank" class="p-2 hover:bg-white rounded-full text-blue-600 shadow-sm">
-                                <i class="fa-solid fa-eye"></i>
-                            </a>
-                            <button onclick="deleteDoc(${item.id})" class="p-2 hover:bg-white rounded-full text-red-500 shadow-sm">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-
-            } catch (err) {
-                console.error("Fetch Error:", err.message);
-                alert("เกิดข้อผิดพลาด: " + err.message);
-            }
-        }
-
-        async function deleteDoc(id) {
-            if (!confirm('ต้องการลบไฟล์นี้ใช่หรือไม่?')) return;
-            try {
-                const { error } = await supabaseClient
-                    .from('documents')
-                    .delete()
-                    .eq('id', id);
-                
-                if (error) throw error;
-                loadData();
-            } catch (err) {
-                alert("ลบไม่สำเร็จ: " + err.message);
-            }
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
