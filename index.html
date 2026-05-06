@@ -3,108 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My PDF Inbox</title>
+    <title>PDF Inbox | Gmail Style</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background: #f0f2f5; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; }
-        h1 { text-align: center; color: #1a73e8; margin-bottom: 10px; }
-        
-        /* เพิ่มส่วนหัวสำหรับปุ่มนำทาง */
-        .header-actions { text-align: center; margin-bottom: 30px; }
-        .btn-send { 
-            display: inline-block; 
-            padding: 10px 20px; 
-            background: #34a853; 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 50px; 
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(52, 168, 83, 0.3);
-            transition: transform 0.2s;
-        }
-        .btn-send:hover { transform: scale(1.05); background: #2d8e47; }
-
-        .card { 
-            background: white; 
-            padding: 20px; 
-            margin-bottom: 15px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border-left: 5px solid #1a73e8;
-            transition: all 0.3s;
-        }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
-        .sender { color: #5f6368; font-size: 0.9em; margin-bottom: 5px; }
-        .subject { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; }
-        .btn-view { 
-            display: inline-block; 
-            padding: 10px 20px; 
-            background: #1a73e8; 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 6px;
-        }
-        #loading { text-align: center; color: #666; margin-top: 50px; }
-        .empty-state { text-align: center; padding: 40px; color: #999; }
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
+        body { font-family: 'Google Sans', sans-serif; background-color: #f6f8fc; }
+        .sidebar-item:hover { background-color: #eaf1fb; color: #041e49; }
+        .active-menu { background-color: #d3e3fd; color: #041e49; font-weight: bold; }
     </style>
 </head>
-<body>
+<body class="h-screen flex flex-col">
 
-    <div class="container">
-        <h1>📩 กล่องจดหมายเข้า (Inbox)</h1>
+    <header class="h-16 flex items-center px-4 justify-between bg-[#f6f8fc]">
+        <div class="flex items-center gap-4 min-w-[240px]">
+            <i class="fa-solid fa-bars p-3 hover:bg-gray-200 rounded-full cursor-pointer text-gray-600"></i>
+            <h1 class="text-xl text-gray-700 font-medium">PDF Inbox</h1>
+        </div>
         
-        <div class="header-actions">
-            <a href="send.html" class="btn-send">➕ ส่งเอกสารใหม่</a>
+        <div class="flex-1 max-w-3xl px-4">
+            <div class="relative group">
+                <i class="fa-solid fa-magnifying-glass absolute left-5 top-3.5 text-gray-500"></i>
+                <input type="email" id="myEmail" placeholder="ค้นหาด้วยอีเมลของคุณ..." 
+                    class="w-full pl-14 pr-4 py-3 bg-[#eaf1fb] border-none rounded-full focus:bg-white focus:shadow-md transition-all outline-none"
+                    onkeypress="if(event.key === 'Enter') loadData()">
+            </div>
         </div>
 
-        <div id="loading">🔍 กำลังตรวจสอบตู้จดหมาย...</div>
-        <div id="inbox-list"></div>
+        <div class="flex items-center gap-2 min-w-[240px] justify-end pr-4 text-gray-500">
+            <i class="fa-solid fa-circle-question p-3 hover:bg-gray-200 rounded-full cursor-pointer"></i>
+            <i class="fa-solid fa-gear p-3 hover:bg-gray-200 rounded-full cursor-pointer"></i>
+            <div class="w-10 h-10 bg-blue-700 text-white rounded-full flex items-center justify-center ml-2">P</div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden px-4 pb-4 gap-4">
+        <aside class="w-64 flex flex-col gap-1">
+            <a href="send.html" class="flex items-center gap-4 w-fit px-6 py-4 bg-[#c2e7ff] hover:shadow-lg rounded-2xl mb-4 transition-all text-sm font-bold">
+                <i class="fa-solid fa-pencil text-lg"></i> เขียน
+            </a>
+            
+            <div class="sidebar-item active-menu flex items-center gap-4 px-6 py-2.5 rounded-full cursor-pointer text-sm">
+                <i class="fa-solid fa-inbox text-lg"></i> กล่องจดหมาย
+            </div>
+            <div class="sidebar-item flex items-center gap-4 px-6 py-2.5 rounded-full cursor-pointer text-sm text-gray-600">
+                <i class="fa-regular fa-star text-lg"></i> ติดดาว
+            </div>
+            <div class="sidebar-item flex items-center gap-4 px-6 py-2.5 rounded-full cursor-pointer text-sm text-gray-600">
+                <i class="fa-regular fa-paper-plane text-lg"></i> ส่งแล้ว
+            </div>
+        </aside>
+
+        <main class="flex-1 bg-white rounded-[1.5rem] shadow-sm flex flex-col overflow-hidden border border-gray-100">
+            <div class="flex items-center p-3 gap-6 text-gray-500 border-b border-gray-50 px-6">
+                <input type="checkbox" class="w-4 h-4 rounded border-gray-300">
+                <i class="fa-solid fa-rotate-right hover:bg-gray-100 p-2 rounded-full cursor-pointer" onclick="loadData()"></i>
+                <i class="fa-solid fa-ellipsis-vertical hover:bg-gray-100 p-2 rounded-full cursor-pointer"></i>
+            </div>
+
+            <div id="inbox-list" class="overflow-y-auto flex-1">
+                <div id="empty-state" class="flex flex-col items-center justify-center h-full text-gray-400">
+                    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/empty/empty_inbox_2x.png" class="w-64 opacity-50 mb-4">
+                    <p class="text-lg">กรอกอีเมลในช่องค้นหาเพื่อดูเอกสารของคุณ</p>
+                </div>
+                <div id="list-content" class="hidden">
+                    </div>
+            </div>
+        </main>
     </div>
 
     <script>
         const SB_URL = 'https://ijxeejypdjwwnejjbxbq.supabase.co'; 
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeGVlanlwZGp3d25lampieGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDA0NzIsImV4cCI6MjA5MzYxNjQ3Mn0.NHCzfKueKHdA763QBWZ_civHzUSUcie9aUqBBt7Yrek'; 
-
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
         async function loadData() {
-            const loadingDiv = document.getElementById('loading');
-            const listDiv = document.getElementById('inbox-list');
+            const email = document.getElementById('myEmail').value.trim();
+            if (!email) return;
 
+            const listContent = document.getElementById('list-content');
+            const emptyState = document.getElementById('empty-state');
+            
             try {
-                const { data, error } = await supabaseClient
-                    .from('documents')
-                    .select('*');
+                const { data, error } = await supabaseClient.from('documents').select('*').eq('receiver', email).order('id', { ascending: false });
+                if (error) throw error;
 
-                loadingDiv.style.display = 'none';
+                emptyState.classList.add('hidden');
+                listContent.classList.remove('hidden');
 
-                if (error) {
-                    listDiv.innerHTML = `<div class="card" style="border-left-color: red;">
-                        <b>เกิดข้อผิดพลาด:</b> ${error.message}
-                    </div>`;
-                    return;
-                }
+                listContent.innerHTML = data.map(item => `
+                    <div class="flex items-center gap-4 px-4 py-2 border-b border-gray-100 hover:bg-gray-50 hover:shadow-md transition-all group cursor-pointer relative">
+                        <div class="flex items-center gap-3 min-w-[80px]">
+                            <input type="checkbox" class="w-4 h-4 rounded border-gray-300 cursor-pointer">
+                            <i class="fa-regular fa-star text-gray-300 hover:text-yellow-400"></i>
+                        </div>
 
-                if (!data || data.length === 0) {
-                    listDiv.innerHTML = '<div class="empty-state">📭 ยังไม่มีจดหมายส่งถึงคุณในตอนนี้</div>';
-                    return;
-                }
+                        <div class="flex flex-1 items-center gap-8 min-w-0">
+                            <span class="font-bold text-gray-900 w-48 truncate">${item.sender}</span>
+                            <div class="flex-1 truncate">
+                                <span class="font-bold text-gray-900">${item.subject}</span>
+                                <span class="text-gray-500"> - ดูเอกสาร PDF ของคุณได้ที่นี่</span>
+                            </div>
+                        </div>
 
-                listDiv.innerHTML = data.map(item => `
-                    <div class="card">
-                        <div class="sender">จาก: ${item.sender || 'ไม่ระบุผู้ส่ง'}</div>
-                        <div class="subject">${item.subject || 'ไม่มีหัวข้อ'}</div>
-                        <a href="${item.file_url}" target="_blank" class="btn-view">👁️ เปิดอ่านเอกสาร PDF</a>
+                        <div class="flex items-center gap-4 text-xs font-bold text-gray-500 group-hover:invisible">
+                            <i class="fa-solid fa-paperclip text-gray-300"></i>
+                            <span>${new Date().toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</span>
+                        </div>
+
+                        <div class="absolute right-4 hidden group-hover:flex items-center gap-1 bg-gray-50 pl-4">
+                            <a href="${item.file_url}" target="_blank" class="p-2 hover:bg-white rounded-full text-blue-600 shadow-sm" title="เปิดดู"><i class="fa-solid fa-eye"></i></a>
+                            <button onclick="deleteDoc(${item.id})" class="p-2 hover:bg-white rounded-full text-red-500 shadow-sm" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
                     </div>
                 `).join('');
-
-            } catch (err) {
-                loadingDiv.innerHTML = "❌ ไม่สามารถเชื่อมต่อได้";
-            }
+            } catch (err) { alert('เกิดข้อผิดพลาด'); }
         }
 
-        loadData();
+        async function deleteDoc(id) {
+            if (!confirm('ยืนยันการลบ?')) return;
+            const { error } = await supabaseClient.from('documents').delete().eq('id', id);
+            if (!error) loadData();
+        }
     </script>
 </body>
 </html>

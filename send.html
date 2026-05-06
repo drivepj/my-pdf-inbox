@@ -3,101 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ส่งไฟล์จริงขึ้น Cloud</title>
+    <title>ส่งเอกสารใหม่</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f2f5; }
-        .form-container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #1a73e8; }
-        label { display: block; margin: 10px 0 5px; font-weight: bold; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        button:disabled { background: #ccc; }
-        .back-link { display: block; text-align: center; margin-top: 20px; color: #666; text-decoration: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
 
-    <div class="form-container">
-        <h2>📤 อัปโหลดและส่งเอกสาร</h2>
-        <form id="uploadForm">
-            <label>จาก (Sender):</label>
-            <input type="email" id="sender" placeholder="อีเมลของคุณ" required>
+    <div class="w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl p-10 border border-slate-100">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-4 rotate-12">
+                <i class="fa-solid fa-file-arrow-up text-3xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800">อัปโหลดเอกสารใหม่</h2>
+            <p class="text-slate-400">ระบบนำส่งไฟล์ PDF เข้าสู่ระบบสารบรรณ</p>
+        </div>
 
-            <label>ถึง (Receiver):</label>
-            <input type="email" id="receiver" placeholder="อีเมลผู้รับ" required>
+        <form id="uploadForm" class="space-y-5">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2 ml-1">จาก (Sender)</label>
+                <input type="email" id="sender" required class="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all">
+            </div>
 
-            <label>หัวข้อเรื่อง (Subject):</label>
-            <input type="text" id="subject" placeholder="หัวข้อเอกสาร" required>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2 ml-1">ถึง (Receiver)</label>
+                <input type="email" id="receiver" required class="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all">
+            </div>
 
-            <label>เลือกไฟล์ PDF:</label>
-            <input type="file" id="fileInput" accept=".pdf" required>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2 ml-1">หัวข้อเรื่อง</label>
+                <input type="text" id="subject" required class="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all">
+            </div>
 
-            <button type="submit" id="submitBtn">📤 เริ่มอัปโหลดและส่ง</button>
+            <div class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-6 text-center cursor-pointer hover:bg-slate-100 transition-all relative">
+                <input type="file" id="fileInput" accept=".pdf" required class="absolute inset-0 opacity-0 cursor-pointer">
+                <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-300 mb-2"></i>
+                <p class="text-sm text-slate-500">คลิกหรือลากไฟล์ PDF มาวางที่นี่</p>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-slate-900 text-white py-4 rounded-full font-bold text-lg hover:bg-black transition-all shadow-lg active:scale-95">
+                ส่งเอกสารเข้าฐานข้อมูล
+            </button>
         </form>
-        <a href="index.html" class="back-link">← กลับไปหน้า Inbox</a>
+        
+        <a href="index.html" class="block text-center mt-6 text-slate-400 hover:text-blue-600 text-sm font-bold transition-all">← กลับหน้ากล่องจดหมาย</a>
     </div>
 
-    <script>
-        const SB_URL = 'https://ijxeejypdjwwnejjbxbq.supabase.co'; 
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeGVlanlwZGp3d25lampieGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDA0NzIsImV4cCI6MjA5MzYxNjQ3Mn0.NHCzfKueKHdA763QBWZ_civHzUSUcie9aUqBBt7Yrek'; 
-        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-
-        const form = document.getElementById('uploadForm');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            const file = document.getElementById('fileInput').files[0];
-            
-            btn.innerText = '⏳ กำลังอัปโหลดไฟล์...';
-            btn.disabled = true;
-
-            try {
-                // ✅ แก้ไข: ดึงแค่นามสกุลไฟล์ (เช่น pdf) และตั้งชื่อใหม่เป็นตัวเลข
-                // เพื่อป้องกันปัญหาชื่อไฟล์ภาษาไทยที่ทำให้เกิด Error "Invalid key"
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${Date.now()}.${fileExt}`;
-
-                // 1. อัปโหลดไฟล์ไปที่ Storage Bucket ชื่อ 'pdf-files'
-                const { data: uploadData, error: uploadError } = await supabaseClient
-                    .storage
-                    .from('pdf-files')
-                    .upload(fileName, file);
-
-                if (uploadError) throw uploadError;
-
-                // 2. ดึง URL ของไฟล์ที่เพิ่งอัปโหลดไป
-                const { data: urlData } = supabaseClient
-                    .storage
-                    .from('pdf-files')
-                    .getPublicUrl(fileName);
-
-                const finalFileUrl = urlData.publicUrl;
-
-                // 3. บันทึกข้อมูลลงตาราง documents
-                const { error: insertError } = await supabaseClient
-                    .from('documents')
-                    .insert([{ 
-                        sender: document.getElementById('sender').value,
-                        receiver: document.getElementById('receiver').value,
-                        subject: document.getElementById('subject').value,
-                        file_url: finalFileUrl 
-                    }]);
-
-                if (insertError) throw insertError;
-
-                alert('✅ อัปโหลดและส่งเอกสารสำเร็จ!');
-                form.reset();
-
-            } catch (error) {
-                alert('❌ เกิดข้อผิดพลาด: ' + error.message);
-                console.error(error);
-            } finally {
-                btn.innerText = '📤 เริ่มอัปโหลดและส่ง';
-                btn.disabled = false;
-            }
-        });
-    </script>
-</body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    </body>
 </html>
