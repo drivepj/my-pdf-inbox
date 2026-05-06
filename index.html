@@ -2,6 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inbox | PDF Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -56,7 +57,7 @@
             
             <div id="inbox-list" class="overflow-y-auto flex-1">
                 <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center">
-                    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/empty/empty_inbox_2x.png" class="w-64 opacity-50 mb-4">
+                    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/empty/empty_inbox_2x.png" class="w-64 opacity-50 mb-4" alt="empty">
                     <p class="text-gray-500">พิมพ์อีเมลในช่องค้นหาเพื่อดูเอกสารของคุณ</p>
                 </div>
                 <div id="list-content" class="hidden"></div>
@@ -70,17 +71,23 @@
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
         async function loadData() {
-            const email = document.getElementById('searchEmail').value.trim();
-            if (!email) return alert("กรุณาใส่เมลที่ต้องการค้นหา");
+            const emailInput = document.getElementById('searchEmail');
+            const email = emailInput.value.trim();
+            
+            if (!email) {
+                alert("กรุณากรอกอีเมลเพื่อค้นหา");
+                return;
+            }
 
             const listContent = document.getElementById('list-content');
             const emptyState = document.getElementById('empty-state');
 
             try {
+                // ใช้ .ilike แทน .eq เพื่อป้องกันเรื่องตัวพิมพ์เล็ก-ใหญ่
                 const { data, error } = await supabaseClient
                     .from('documents')
                     .select('*')
-                    .eq('receiver', email)
+                    .ilike('receiver', email)
                     .order('id', { ascending: false });
 
                 if (error) throw error;
@@ -112,18 +119,35 @@
                             <span>${new Date(item.created_at).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</span>
                         </div>
                         <div class="absolute right-4 hidden group-hover:flex items-center gap-1 bg-gray-100 pl-4">
-                            <a href="${item.file_url}" target="_blank" class="p-2 hover:bg-white rounded-full text-blue-600 shadow-sm"><i class="fa-solid fa-eye"></i></a>
-                            <button onclick="deleteDoc(${item.id})" class="p-2 hover:bg-white rounded-full text-red-500 shadow-sm"><i class="fa-solid fa-trash-can"></i></button>
+                            <a href="${item.file_url}" target="_blank" class="p-2 hover:bg-white rounded-full text-blue-600 shadow-sm">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            <button onclick="deleteDoc(${item.id})" class="p-2 hover:bg-white rounded-full text-red-500 shadow-sm">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </div>
                     </div>
                 `).join('');
-            } catch (err) { alert(err.message); }
+
+            } catch (err) {
+                console.error("Fetch Error:", err.message);
+                alert("เกิดข้อผิดพลาด: " + err.message);
+            }
         }
 
         async function deleteDoc(id) {
             if (!confirm('ต้องการลบไฟล์นี้ใช่หรือไม่?')) return;
-            const { error } = await supabaseClient.from('documents').delete().eq('id', id);
-            if (!error) loadData();
+            try {
+                const { error } = await supabaseClient
+                    .from('documents')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                loadData();
+            } catch (err) {
+                alert("ลบไม่สำเร็จ: " + err.message);
+            }
         }
     </script>
 </body>
