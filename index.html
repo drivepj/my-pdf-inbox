@@ -8,7 +8,23 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background: #f0f2f5; color: #333; }
         .container { max-width: 600px; margin: 0 auto; }
-        h1 { text-align: center; color: #1a73e8; }
+        h1 { text-align: center; color: #1a73e8; margin-bottom: 10px; }
+        
+        /* เพิ่มส่วนหัวสำหรับปุ่มนำทาง */
+        .header-actions { text-align: center; margin-bottom: 30px; }
+        .btn-send { 
+            display: inline-block; 
+            padding: 10px 20px; 
+            background: #34a853; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 50px; 
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(52, 168, 83, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn-send:hover { transform: scale(1.05); background: #2d8e47; }
+
         .card { 
             background: white; 
             padding: 20px; 
@@ -16,10 +32,12 @@
             border-radius: 12px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             border-left: 5px solid #1a73e8;
+            transition: all 0.3s;
         }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
         .sender { color: #5f6368; font-size: 0.9em; margin-bottom: 5px; }
         .subject { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; }
-        .btn { 
+        .btn-view { 
             display: inline-block; 
             padding: 10px 20px; 
             background: #1a73e8; 
@@ -35,12 +53,16 @@
 
     <div class="container">
         <h1>📩 กล่องจดหมายเข้า (Inbox)</h1>
+        
+        <div class="header-actions">
+            <a href="send.html" class="btn-send">➕ ส่งเอกสารใหม่</a>
+        </div>
+
         <div id="loading">🔍 กำลังตรวจสอบตู้จดหมาย...</div>
         <div id="inbox-list"></div>
     </div>
 
     <script>
-        // ใช้ค่าของคุณที่ตรวจสอบแล้วว่าถูกต้องครับ
         const SB_URL = 'https://ijxeejypdjwwnejjbxbq.supabase.co'; 
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeGVlanlwZGp3d25lampieGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDA0NzIsImV4cCI6MjA5MzYxNjQ3Mn0.NHCzfKueKHdA763QBWZ_civHzUSUcie9aUqBBt7Yrek'; 
 
@@ -51,7 +73,6 @@
             const listDiv = document.getElementById('inbox-list');
 
             try {
-                // แก้ไขโดยการตัด .order('created_at') ออก เพื่อไม่ให้เกิด Error
                 const { data, error } = await supabaseClient
                     .from('documents')
                     .select('*');
@@ -74,7 +95,7 @@
                     <div class="card">
                         <div class="sender">จาก: ${item.sender || 'ไม่ระบุผู้ส่ง'}</div>
                         <div class="subject">${item.subject || 'ไม่มีหัวข้อ'}</div>
-                        <a href="${item.file_url}" target="_blank" class="btn">👁️ เปิดอ่านเอกสาร PDF</a>
+                        <a href="${item.file_url}" target="_blank" class="btn-view">👁️ เปิดอ่านเอกสาร PDF</a>
                     </div>
                 `).join('');
 
