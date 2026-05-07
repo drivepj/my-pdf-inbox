@@ -41,9 +41,6 @@
         .mail-item.unread { background-color: #f2f6fc; }
         .unread-dot { width: 8px; height: 8px; background-color: #1a73e8; border-radius: 50%; }
         
-        .action-group { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-        .mail-item:hover .action-group { opacity: 1; pointer-events: auto; }
-
         .mail-checkbox { cursor: pointer; width: 16px; height: 16px; accent-color: #444; }
         .swal2-container { z-index: 3000 !important; }
     </style>
@@ -97,10 +94,6 @@
                 <div id="nav-sent" onclick="loadData('sent')" class="nav-item">
                     <div class="flex items-center gap-4"><i class="fa-regular fa-paper-plane"></i> ส่งแล้ว</div>
                 </div>
-                <div id="nav-rejected" onclick="loadData('rejected')" class="nav-item">
-                    <div class="flex items-center gap-4"><i class="fa-solid fa-circle-exclamation"></i> ถูกตีกลับ</div>
-                    <span id="badge-rejected" class="text-xs font-bold text-red-500"></span>
-                </div>
             </nav>
         </aside>
 
@@ -121,7 +114,6 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-                    <span id="current-view-title" class="hidden sm:inline font-bold uppercase tracking-wider mr-2">รายการทั้งหมด</span>
                     <span id="result-count">0</span> รายการ
                 </div>
             </div>
@@ -137,12 +129,9 @@
         <div class="flex items-center justify-between p-3 bg-[#f2f6fc] rounded-t-xl border-b">
             <span class="text-sm font-medium text-gray-800 ml-2">ข้อความใหม่</span>
             <div class="flex items-center gap-4 text-gray-500 mr-2">
-                <i class="fa-solid fa-minus cursor-pointer text-xs hover:text-black"></i>
-                <i class="fa-solid fa-up-right-and-down-left-from-center cursor-pointer text-[10px] hover:text-black"></i>
                 <i onclick="toggleComposeModal()" class="fa-solid fa-xmark cursor-pointer text-lg hover:text-black"></i>
             </div>
         </div>
-
         <form id="uploadForm" class="flex-1 flex flex-col overflow-hidden bg-white">
             <div class="px-4 py-1.5 border-b flex items-center gap-2">
                 <span class="text-sm text-gray-500 w-8">ถึง</span>
@@ -151,81 +140,43 @@
             <div class="px-4 py-1.5 border-b">
                 <input type="text" id="subject" class="w-full outline-none text-sm py-1" required placeholder="เรื่อง">
             </div>
-            
             <div class="px-4 py-4 bg-gray-50/30 flex-1 overflow-y-auto">
                 <span class="text-[11px] font-bold text-blue-600 uppercase tracking-widest block mb-3">ประเภทเอกสาร</span>
                 <div class="grid grid-cols-2 gap-2 mb-4">
-                    <label class="flex items-center gap-2 p-2 bg-white border rounded hover:shadow-sm cursor-pointer transition-all">
-                        <input type="radio" name="category" value="ทั่วไป" checked class="accent-blue-600">
-                        <span class="text-xs text-gray-600">ทั่วไป</span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2 bg-white border rounded hover:shadow-sm cursor-pointer">
-                        <input type="radio" name="category" value="ใบเสร็จ" class="accent-blue-600">
-                        <span class="text-xs text-gray-600">ใบเสร็จ</span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2 bg-white border rounded hover:shadow-sm cursor-pointer">
-                        <input type="radio" name="category" value="ใบสั่งซื้อ (PO)" class="accent-blue-600">
-                        <span class="text-xs text-gray-600">ใบสั่งซื้อ (PO)</span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2 bg-white border rounded hover:shadow-sm cursor-pointer">
-                        <input type="radio" name="category" value="ใบเสนอราคา" class="accent-blue-600">
-                        <span class="text-xs text-gray-600">ใบเสนอราคา</span>
-                    </label>
+                    <label class="flex items-center gap-2 p-2 bg-white border rounded hover:shadow-sm cursor-pointer"><input type="radio" name="category" value="ทั่วไป" checked class="accent-blue-600"><span class="text-xs text-gray-600">ทั่วไป</span></label>
+                    <label class="flex items-center gap-2 p-2 bg-white border rounded hover:shadow-sm cursor-pointer"><input type="radio" name="category" value="ใบเสร็จ" class="accent-blue-600"><span class="text-xs text-gray-600">ใบเสร็จ</span></label>
                 </div>
-
                 <div id="attachmentArea" class="hidden border-t pt-3 space-y-2">
                     <div id="pdfPreview" class="hidden bg-gray-100 p-2 rounded flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-file-pdf text-red-500"></i>
-                            <span id="pdfNameDisplay" class="text-xs text-gray-600 truncate max-w-[200px]"></span>
-                        </div>
+                        <div class="flex items-center gap-2"><i class="fa-solid fa-file-pdf text-red-500"></i><span id="pdfNameDisplay" class="text-xs text-gray-600 truncate max-w-[200px]"></span></div>
                         <i onclick="clearAttachment('pdf')" class="fa-solid fa-xmark text-xs text-gray-400 cursor-pointer hover:text-red-500 p-1"></i>
                     </div>
                     <div id="imagePreview" class="hidden relative inline-block">
                         <img id="imgPreviewSrc" src="" class="h-20 w-20 object-cover rounded-lg border shadow-sm">
-                        <div onclick="clearAttachment('image')" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer shadow-md">
-                            <i class="fa-solid fa-xmark text-[10px]"></i>
-                        </div>
+                        <div onclick="clearAttachment('image')" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer shadow-md"><i class="fa-solid fa-xmark text-[10px]"></i></div>
                     </div>
                 </div>
             </div>
-
             <div class="p-4 flex items-center justify-between border-t bg-white">
                 <div class="flex items-center gap-1">
-                    <div class="flex items-stretch mr-4">
-                        <button type="submit" id="submitBtn" class="bg-[#0b57d0] text-white px-6 py-2 rounded-l-full font-medium text-sm hover:bg-[#0842a0]">ส่ง</button>
-                        <div class="bg-[#0b57d0] border-l border-white/20 px-2 flex items-center rounded-r-full cursor-pointer text-white">
-                            <i class="fa-solid fa-caret-down text-[10px]"></i>
-                        </div>
+                    <button type="submit" id="submitBtn" class="bg-[#0b57d0] text-white px-6 py-2 rounded-full font-medium text-sm hover:bg-[#0842a0]">ส่ง</button>
+                    <div class="flex items-center gap-1 ml-4 text-gray-500">
+                        <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-md cursor-pointer"><input type="file" id="fileInput" accept=".pdf" class="hidden" onchange="handleFileSelect(this)"><i class="fa-solid fa-paperclip text-sm"></i></label>
+                        <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-md cursor-pointer"><input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageSelect(this)"><i class="fa-regular fa-image text-sm"></i></label>
                     </div>
-                    <div class="flex items-center gap-1 text-gray-500">
-                        <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-md cursor-pointer" title="แนบ PDF">
-                            <input type="file" id="fileInput" accept=".pdf" class="hidden" onchange="handleFileSelect(this)">
-                            <i class="fa-solid fa-paperclip text-sm"></i>
-                        </label>
-                        <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-md cursor-pointer" title="แนบรูปภาพ">
-                            <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageSelect(this)">
-                            <i class="fa-regular fa-image text-sm"></i>
-                        </label>
-                    </div>
-                </div>
-                <div onclick="toggleComposeModal()" class="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-md cursor-pointer">
-                    <i class="fa-regular fa-trash-can text-sm"></i>
                 </div>
             </div>
         </form>
     </div>
 
-    <div id="previewModal" class="hidden fixed inset-0 bg-black/70 z-[2000] flex items-center justify-center p-0 lg:p-12">
-        <div class="bg-white w-full h-full lg:rounded-xl flex flex-col relative">
-            <div class="p-4 flex justify-between items-center border-b">
-                <h3 id="previewTitle" class="font-bold text-gray-700 truncate"></h3>
-                <button onclick="closePreview()" class="text-3xl text-gray-400">&times;</button>
+    <div id="previewModal" class="hidden fixed inset-0 bg-black/70 z-[2000] flex items-center justify-center p-0 lg:p-8">
+        <div class="bg-white w-full h-full lg:rounded-xl flex flex-col relative overflow-hidden">
+            <div class="p-4 flex justify-between items-center border-b bg-white sticky top-0 z-10">
+                <div id="previewTitle" class="flex-1"></div>
+                <button onclick="closePreview()" class="text-3xl text-gray-400 hover:text-gray-600 transition-colors ml-4">&times;</button>
             </div>
-            <div id="previewContent" class="flex-1 w-full overflow-y-auto bg-gray-100 flex flex-col gap-4 p-4 items-center">
-                <iframe id="previewFrame" class="hidden w-full h-[800px] bg-white shadow-sm border rounded" src=""></iframe>
-                <img id="previewImage" src="" class="hidden max-w-full h-auto rounded shadow-sm border">
-            </div>
+            <div id="previewContent" class="flex-1 w-full overflow-y-auto bg-[#f6f8fc] flex flex-col items-center">
+                </div>
         </div>
     </div>
 
@@ -237,6 +188,17 @@
         let currentUser = null;
         let currentFilter = 'all'; 
         let selectedIds = new Set();
+
+        // 1. ฟังก์ชันสร้าง Badge สีตามสถานะ
+        function getStatusBadge(status) {
+            const statusMap = {
+                'pending': { text: 'รอดำเนินการ', class: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+                'approved': { text: 'อนุมัติแล้ว', class: 'bg-green-100 text-green-700 border-green-200' },
+                'rejected': { text: 'ถูกปฏิเสธ', class: 'bg-red-100 text-red-700 border-red-200' }
+            };
+            const s = statusMap[status] || { text: status, class: 'bg-gray-100 text-gray-600 border-gray-200' };
+            return `<span class="px-2 py-0.5 rounded border text-[10px] font-bold uppercase ${s.class}">${s.text}</span>`;
+        }
 
         async function checkAuth() {
             const loader = document.getElementById('page-loader');
@@ -264,6 +226,7 @@
             supabaseClient.channel('public:documents').on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => loadData(currentFilter)).subscribe();
         }
 
+        // Bulk Actions
         function toggleSelectAll(master) {
             const checkboxes = document.querySelectorAll('.mail-checkbox:not(#selectAll)');
             selectedIds.clear();
@@ -273,17 +236,14 @@
             });
             updateBulkUI();
         }
-
         function toggleItemSelect(id, cb) {
             if (cb.checked) selectedIds.add(id);
             else { selectedIds.delete(id); document.getElementById('selectAll').checked = false; }
             updateBulkUI();
         }
-
         function updateBulkUI() {
             document.getElementById('bulk-actions').style.display = selectedIds.size > 0 ? 'flex' : 'none';
         }
-
         async function bulkDelete() {
             const { isConfirmed } = await Swal.fire({ title: `ลบ ${selectedIds.size} รายการ?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ' });
             if (isConfirmed) {
@@ -294,23 +254,14 @@
         }
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('mobile-overlay').classList.toggle('hidden'); }
-        
         function toggleComposeModal() { 
             const modal = document.getElementById('composeModal');
             modal.classList.toggle('active');
-            if (!modal.classList.contains('active')) {
-                document.getElementById('uploadForm').reset();
-                clearAttachment('all');
-            }
+            if (!modal.classList.contains('active')) { document.getElementById('uploadForm').reset(); clearAttachment('all'); }
         }
+        function closePreview() { document.getElementById('previewModal').classList.add('hidden'); }
 
-        function closePreview() { 
-            document.getElementById('previewModal').classList.add('hidden'); 
-            document.getElementById('previewFrame').src = ""; 
-            document.getElementById('previewImage').src = ""; 
-        }
-
-        // แนบไฟล์ PDF (ไม่ล้างรูป)
+        // File Attachment Handlers
         function handleFileSelect(input) {
             if (input.files[0]) {
                 document.getElementById('pdfNameDisplay').innerText = input.files[0].name;
@@ -318,8 +269,6 @@
                 document.getElementById('pdfPreview').classList.remove('hidden');
             }
         }
-
-        // แนบไฟล์รูป (ไม่ล้าง PDF)
         function handleImageSelect(input) {
             if (input.files[0]) {
                 const reader = new FileReader();
@@ -331,23 +280,15 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
-
         function clearAttachment(type) {
-            if (type === 'pdf' || type === 'all') {
-                document.getElementById('fileInput').value = "";
-                document.getElementById('pdfPreview').classList.add('hidden');
-            }
-            if (type === 'image' || type === 'all') {
-                document.getElementById('imageInput').value = "";
-                document.getElementById('imagePreview').classList.add('hidden');
-                document.getElementById('imgPreviewSrc').src = "";
-            }
-            if (document.getElementById('pdfPreview').classList.contains('hidden') && 
-                document.getElementById('imagePreview').classList.contains('hidden')) {
+            if (type === 'pdf' || type === 'all') { document.getElementById('fileInput').value = ""; document.getElementById('pdfPreview').classList.add('hidden'); }
+            if (type === 'image' || type === 'all') { document.getElementById('imageInput').value = ""; document.getElementById('imagePreview').classList.add('hidden'); document.getElementById('imgPreviewSrc').src = ""; }
+            if (document.getElementById('pdfPreview').classList.contains('hidden') && document.getElementById('imagePreview').classList.contains('hidden')) {
                 document.getElementById('attachmentArea').classList.add('hidden');
             }
         }
 
+        // Load Data with Status Badge
         async function loadData(filter = 'all') {
             currentFilter = filter;
             selectedIds.clear(); document.getElementById('selectAll').checked = false; updateBulkUI();
@@ -376,16 +317,18 @@
                 
                 listContent.innerHTML = data.map(item => {
                     const isUnread = !item.is_read && item.receiver === currentUser.email;
+                    const itemData = encodeURIComponent(JSON.stringify(item));
                     return `
-                    <div class="mail-item flex items-center px-4 py-2 group cursor-pointer ${isUnread ? 'unread font-bold' : ''}">
+                    <div class="mail-item flex items-center px-4 py-2 group cursor-pointer ${isUnread ? 'unread font-bold' : ''}" onclick="openPreview('${itemData}')">
                         <div class="flex items-center gap-3 mr-2">
                             <input type="checkbox" class="mail-checkbox" data-id="${item.id}" onclick="event.stopPropagation(); toggleItemSelect(${item.id}, this)">
                             <div class="w-4 flex justify-center">${isUnread ? '<div class="unread-dot"></div>' : '<i class="fa-regular fa-star text-gray-200"></i>'}</div>
                         </div>
-                        <div class="flex flex-1 min-w-0 items-center gap-4" onclick="openPreview(${item.id}, '${item.file_url}', '${item.image_url}', '${item.subject}', ${item.is_read})">
+                        <div class="flex flex-1 min-w-0 items-center gap-4">
                             <span class="text-sm text-gray-700 w-32 sm:w-40 truncate">${item.sender.split('@')[0]}</span>
                             <div class="flex-1 truncate flex items-center gap-2">
                                 <span class="text-sm text-gray-900">${item.subject}</span>
+                                ${getStatusBadge(item.status)}
                                 ${item.file_url ? '<i class="fa-solid fa-paperclip text-[10px] text-gray-400"></i>' : ''}
                                 ${item.image_url ? '<i class="fa-regular fa-image text-[10px] text-gray-400"></i>' : ''}
                             </div>
@@ -396,65 +339,87 @@
             } catch (err) { statusContainer.innerText = "Error loading data"; }
         }
 
-        async function openPreview(id, pdfUrl, imageUrl, title, isRead) {
-            document.getElementById('previewTitle').innerText = title;
-            const frame = document.getElementById('previewFrame');
-            const img = document.getElementById('previewImage');
-            
-            frame.classList.add('hidden');
-            img.classList.add('hidden');
+        // Gmail Style Preview
+        async function openPreview(encodedItem) {
+            const item = JSON.parse(decodeURIComponent(encodedItem));
+            const modal = document.getElementById('previewModal');
+            const contentArea = document.getElementById('previewContent');
+            const titleArea = document.getElementById('previewTitle');
 
-            if (pdfUrl) { frame.src = pdfUrl; frame.classList.remove('hidden'); }
-            if (imageUrl) { img.src = imageUrl; img.classList.remove('hidden'); }
+            titleArea.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="text-lg font-normal text-gray-800">${item.subject}</span>
+                    ${getStatusBadge(item.status)}
+                </div>
+            `;
 
-            document.getElementById('previewModal').classList.remove('hidden');
-            if (!isRead && currentUser.email !== 'admin@gmail.com') {
-                await supabaseClient.from('documents').update({ is_read: true }).eq('id', id).eq('receiver', currentUser.email);
+            contentArea.innerHTML = `
+                <div class="w-full max-w-5xl bg-white p-6 shadow-sm rounded-lg border border-gray-200 my-4 mx-4">
+                    <div class="flex justify-between items-start mb-8">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white uppercase shadow-sm">${item.sender.charAt(0)}</div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-sm text-gray-900">${item.sender.split('@')[0]}</span>
+                                    <span class="text-xs text-gray-500 font-light">&lt;${item.sender}&gt;</span>
+                                </div>
+                                <div class="text-xs text-gray-400">ถึง ฉัน</div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 text-right">
+                            <div>${new Date(item.created_at).toLocaleDateString('th-TH', { dateStyle: 'long' })}</div>
+                            <div>${new Date(item.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        ${item.file_url ? `
+                            <div class="border rounded-xl overflow-hidden shadow-sm">
+                                <div class="bg-gray-50 px-4 py-2 border-b text-xs font-medium text-gray-600 flex items-center gap-2"><i class="fa-solid fa-file-pdf text-red-500"></i> ไฟล์ PDF แนบ</div>
+                                <iframe src="${item.file_url}" class="w-full h-[600px] bg-white border-none"></iframe>
+                            </div>` : ''}
+                        ${item.image_url ? `
+                            <div class="border rounded-xl overflow-hidden shadow-sm">
+                                <div class="bg-gray-50 px-4 py-2 border-b text-xs font-medium text-gray-600 flex items-center gap-2"><i class="fa-regular fa-image text-blue-500"></i> รูปภาพแนบ</div>
+                                <div class="p-4 bg-gray-100 flex justify-center"><img src="${item.image_url}" class="max-w-full h-auto shadow-lg border rounded-lg"></div>
+                            </div>` : ''}
+                    </div>
+                </div>`;
+
+            modal.classList.remove('hidden');
+            if (!item.is_read && item.receiver === currentUser.email) {
+                await supabaseClient.from('documents').update({ is_read: true }).eq('id', item.id);
             }
         }
 
-        // ระบบส่งไฟล์คู่ (PDF + รูปภาพ)
+        // Form Submit
         document.getElementById('uploadForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const pdfFile = document.getElementById('fileInput').files[0];
             const imgFile = document.getElementById('imageInput').files[0];
-
             if(!pdfFile && !imgFile) { Swal.fire('แจ้งเตือน', 'กรุณาแนบไฟล์อย่างน้อย 1 อย่าง', 'warning'); return; }
-            
             btn.disabled = true; btn.innerText = 'กำลังส่ง...';
-            
             try {
-                let pdfUrl = null;
-                let imageUrl = null;
+                let pdfUrl = null, imageUrl = null;
                 const uploads = [];
-
                 if (pdfFile) {
                     const name = `pdf-${Date.now()}-${pdfFile.name}`;
                     uploads.push(supabaseClient.storage.from('pdfs').upload(`uploads/${name}`, pdfFile).then(() => {
                         pdfUrl = supabaseClient.storage.from('pdfs').getPublicUrl(`uploads/${name}`).data.publicUrl;
                     }));
                 }
-
                 if (imgFile) {
                     const name = `img-${Date.now()}-${imgFile.name}`;
                     uploads.push(supabaseClient.storage.from('images').upload(`uploads/${name}`, imgFile).then(() => {
                         imageUrl = supabaseClient.storage.from('images').getPublicUrl(`uploads/${name}`).data.publicUrl;
                     }));
                 }
-
                 await Promise.all(uploads);
-
                 await supabaseClient.from('documents').insert([{
-                    sender: currentUser.email, 
-                    receiver: document.getElementById('receiver').value,
-                    subject: document.getElementById('subject').value, 
-                    category: document.querySelector('input[name="category"]:checked').value,
-                    file_url: pdfUrl,
-                    image_url: imageUrl,
-                    status: 'pending'
+                    sender: currentUser.email, receiver: document.getElementById('receiver').value,
+                    subject: document.getElementById('subject').value, category: document.querySelector('input[name="category"]:checked').value,
+                    file_url: pdfUrl, image_url: imageUrl, status: 'pending'
                 }]);
-
                 toggleComposeModal(); loadData('sent');
                 Swal.fire({ icon: 'success', title: 'ส่งสำเร็จ', timer: 1500, showConfirmButton: false });
             } catch (err) { Swal.fire('Error', err.message, 'error'); } 
