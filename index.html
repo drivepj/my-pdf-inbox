@@ -12,7 +12,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f6f8fc; overflow-x: hidden; }
 
-        /* ปรับปรุง Modal ให้รองรับมือถือ */
         .gmail-modal {
             position: fixed;
             bottom: 0;
@@ -34,7 +33,6 @@
         }
         .gmail-modal.active { display: flex; }
 
-        /* Sidebar สำหรับมือถือ */
         #sidebar {
             position: fixed;
             left: -260px;
@@ -60,7 +58,6 @@
         @media (max-width: 768px) { .action-group { opacity: 1; } }
         .mail-item:hover .action-group { opacity: 1; }
 
-        /* Custom SweetAlert Style */
         .swal2-container { z-index: 3000 !important; }
     </style>
 </head>
@@ -252,7 +249,6 @@
             } catch (err) { statusContainer.innerText = "Error loading data"; }
         }
 
-        // ฟังก์ชัน Logout แบบใหม่ที่ปรับปรุงแล้ว
         async function handleLogout() {
             const { isConfirmed } = await Swal.fire({
                 title: 'ออกจากระบบ?',
@@ -285,6 +281,7 @@
             document.getElementById('fileName').innerText = e.target.files[0]?.name || "แนบไฟล์ PDF";
         };
 
+        // --- ส่วนแก้ไขใหม่เพื่อป้องกัน Error ชื่อไฟล์ภาษาไทย ---
         document.getElementById('uploadForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -292,7 +289,11 @@
             if(!file) return;
 
             btn.disabled = true; btn.innerText = "กำลังส่ง...";
-            const filePath = `uploads/${Date.now()}_${file.name}`;
+            
+            // เปลี่ยนชื่อไฟล์เป็น Timestamp เพื่อป้องกันภาษาไทยมีปัญหาใน URL
+            const fileExt = file.name.split('.').pop();
+            const safeFileName = `${Date.now()}.${fileExt}`; 
+            const filePath = `uploads/${safeFileName}`;
 
             try {
                 const { error: uploadError } = await supabaseClient.storage.from('pdfs').upload(filePath, file);
@@ -309,10 +310,16 @@
                 }]);
                 
                 if (insertError) throw insertError;
+                
                 Swal.fire({ icon: 'success', title: 'ส่งสำเร็จ', timer: 1000, showConfirmButton: false });
-                toggleComposeModal(); loadData(); e.target.reset();
+                toggleComposeModal(); 
+                loadData(); 
+                e.target.reset();
                 document.getElementById('fileName').innerText = "แตะเพื่อแนบไฟล์ PDF";
-            } catch (err) { Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: err.message }); }
+            } catch (err) { 
+                Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: "ไม่สามารถส่งไฟล์ได้ในขณะนี้" }); 
+                console.error(err);
+            }
             finally { btn.disabled = false; btn.innerText = "ส่งเอกสาร"; }
         };
 
