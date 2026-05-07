@@ -2,47 +2,72 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>เขียนเอกสารใหม่ | PDF System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เขียนเอกสารใหม่ | CloudPDF</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
-        body { font-family: 'Google Sans', sans-serif; background-color: #f6f8fc; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f6f8fc; }
+        .input-field {
+            background-color: #f1f3f4;
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            background-color: #ffffff;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-xl bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8 md:p-12">
-        <div class="flex items-center gap-3 mb-8">
-            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white">
-                <i class="fa-solid fa-pencil"></i>
+<body class="min-h-screen flex items-center justify-center p-6">
+    <div class="w-full max-w-lg bg-white rounded-3xl shadow-sm border border-gray-100 p-10">
+        <div class="flex items-center gap-4 mb-10">
+            <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                <i class="fa-solid fa-paper-plane"></i>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800">เขียนเอกสารใหม่</h2>
+            <div>
+                <h2 class="text-xl font-bold text-gray-800">New Message</h2>
+                <p class="text-xs text-gray-400 font-medium tracking-wide uppercase">CloudPDF Secure Transfer</p>
+            </div>
         </div>
 
-        <form id="uploadForm" class="space-y-4">
-            <input type="email" id="sender" placeholder="จาก (อีเมลของคุณ)" required 
-                class="w-full p-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all">
+        <form id="uploadForm" class="space-y-5">
+            <div>
+                <label class="text-[11px] font-bold text-gray-400 ml-4 mb-1 block uppercase tracking-widest">From</label>
+                <input type="email" id="sender" placeholder="อีเมลของคุณ" required 
+                    class="input-field w-full p-4 rounded-2xl border-none outline-none text-sm">
+            </div>
             
-            <input type="email" id="receiver" placeholder="ถึง (อีเมลผู้รับ)" required 
-                class="w-full p-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all">
+            <div>
+                <label class="text-[11px] font-bold text-gray-400 ml-4 mb-1 block uppercase tracking-widest">To</label>
+                <input type="email" id="receiver" placeholder="อีเมลผู้รับ" required 
+                    class="input-field w-full p-4 rounded-2xl border-none outline-none text-sm">
+            </div>
             
-            <input type="text" id="subject" placeholder="หัวข้อเรื่อง" required 
-                class="w-full p-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all">
+            <div>
+                <label class="text-[11px] font-bold text-gray-400 ml-4 mb-1 block uppercase tracking-widest">Subject</label>
+                <input type="text" id="subject" placeholder="หัวข้อเรื่อง" required 
+                    class="input-field w-full p-4 rounded-2xl border-none outline-none text-sm">
+            </div>
             
-            <div class="group relative border-2 border-dashed border-gray-200 rounded-3xl p-10 text-center hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer">
+            <div class="group relative border-2 border-dashed border-gray-100 rounded-3xl p-8 text-center hover:bg-blue-50 hover:border-blue-200 transition-all cursor-pointer">
                 <input type="file" id="fileInput" accept=".pdf" required class="absolute inset-0 opacity-0 cursor-pointer">
                 <div id="fileArea">
-                    <i class="fa-solid fa-file-pdf text-4xl text-gray-300 mb-3 group-hover:text-blue-400"></i>
-                    <p id="fileName" class="text-gray-500">คลิกเพื่อเลือกไฟล์ PDF</p>
+                    <i class="fa-solid fa-file-arrow-up text-3xl text-gray-200 mb-2 group-hover:text-blue-400 transition-colors"></i>
+                    <p id="fileName" class="text-xs text-gray-400 font-medium">ลากไฟล์ PDF มาวางหรือคลิกเพื่อเลือก</p>
                 </div>
             </div>
 
-            <button type="submit" id="submitBtn" class="w-full py-4 bg-blue-600 text-white rounded-full font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all">
-                ส่งเอกสาร
+            <button type="submit" id="submitBtn" class="w-full py-4 bg-[#0b57d0] text-white rounded-full font-bold shadow-lg shadow-blue-100 hover:bg-[#0842a0] active:scale-95 transition-all text-sm mt-4">
+                Send Document
             </button>
         </form>
-        <a href="index.html" class="block text-center mt-6 text-gray-400 hover:text-blue-600 transition-colors">← กลับไปหน้า Inbox</a>
+        
+        <a href="index.html" class="block text-center mt-8 text-xs font-bold text-gray-400 hover:text-blue-600 transition-colors uppercase tracking-widest">
+            ← Back to Inbox
+        </a>
     </div>
 
     <script>
@@ -51,32 +76,37 @@
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
         document.getElementById('fileInput').onchange = (e) => {
-            const name = e.target.files[0]?.name || "คลิกเพื่อเลือกไฟล์ PDF";
-            document.getElementById('fileName').innerText = name;
-            document.getElementById('fileName').classList.add('text-blue-600', 'font-bold');
+            const name = e.target.files[0]?.name || "ลากไฟล์ PDF มาวางหรือคลิกเพื่อเลือก";
+            const fileNameElement = document.getElementById('fileName');
+            fileNameElement.innerText = name;
+            if (e.target.files[0]) {
+                fileNameElement.classList.remove('text-gray-400');
+                fileNameElement.classList.add('text-blue-600', 'font-bold');
+            }
         };
 
         document.getElementById('uploadForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-            btn.disabled = true; btn.innerText = "กำลังส่ง...";
+            btn.disabled = true; 
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch animate-spin mr-2"></i> Sending...';
 
             const file = document.getElementById('fileInput').files[0];
             const fileExt = file.name.split('.').pop();
             const filePath = `${Date.now()}.${fileExt}`;
 
             try {
-                // 1. อัปโหลดไฟล์ไปที่ Bucket 'pdfs'
-                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                // 1. อัปโหลดไฟล์
+                const { error: uploadError } = await supabaseClient.storage
                     .from('pdfs')
                     .upload(filePath, file);
 
                 if (uploadError) throw uploadError;
 
-                // 2. ดึง Public URL ของไฟล์ที่อัปโหลด
+                // 2. ดึง URL
                 const { data: urlData } = supabaseClient.storage.from('pdfs').getPublicUrl(filePath);
 
-                // 3. บันทึกลงตาราง documents
+                // 3. บันทึก DB
                 const { error: dbError } = await supabaseClient.from('documents').insert([{
                     sender: document.getElementById('sender').value,
                     receiver: document.getElementById('receiver').value,
@@ -86,11 +116,27 @@
 
                 if (dbError) throw dbError;
 
-                alert('ส่งเอกสารสำเร็จ!');
+                // แจ้งเตือนสำเร็จด้วย SweetAlert2
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'ส่งเอกสารสำเร็จ',
+                    text: 'เอกสารของคุณถูกนำเข้าระบบแล้ว',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    customClass: { popup: 'rounded-3xl' }
+                });
+                
                 window.location.href = 'index.html';
             } catch (err) {
-                alert('ข้อผิดพลาด: ' + err.message);
-                btn.disabled = false; btn.innerText = "ส่งเอกสาร";
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: err.message,
+                    confirmButtonColor: '#0b57d0',
+                    customClass: { popup: 'rounded-3xl', confirmButton: 'rounded-xl px-8' }
+                });
+                btn.disabled = false; 
+                btn.innerText = "Send Document";
             }
         };
     </script>
