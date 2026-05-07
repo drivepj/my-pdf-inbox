@@ -3,109 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudPDF | Inbox</title>
+    <title>CloudPDF | Inbox & Tracking</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f6f8fc; overflow-x: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
+        body { font-family: 'Inter', 'Kanit', sans-serif; background-color: #f6f8fc; overflow-x: hidden; }
 
-        .gmail-modal {
-            position: fixed;
-            bottom: 0;
-            right: 0;
-            width: 100%;
-            max-width: 510px;
-            height: 100%;
-            max-height: 500px;
-            background: white;
-            box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14);
-            border-radius: 12px 12px 0 0;
-            display: none;
-            flex-direction: column;
-            z-index: 1000;
-            transition: all 0.3s;
+        /* --- Minimal Loading Screen --- */
+        #page-loader {
+            position: fixed; inset: 0; background-color: #ffffff; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
         }
-        @media (min-width: 768px) {
-            .gmail-modal { right: 70px; width: 510px; height: 450px; border-radius: 8px 8px 0 0; }
-        }
+        .loading-bar-container { width: 180px; height: 4px; background-color: #f1f3f4; border-radius: 2px; overflow: hidden; margin-top: 24px; }
+        .loading-bar-progress { width: 0%; height: 100%; background-color: #1a73e8; transition: width 0.4s ease-in-out; }
+
+        /* Animation สำหรับเนื้อหาหลัก */
+        main { opacity: 0; transform: translateY(15px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+        main.content-ready { opacity: 1; transform: translateY(0); }
+
+        .nav-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 24px; cursor: pointer; border-radius: 0 20px 20px 0; font-size: 14px; color: #444746; transition: all 0.2s; margin-right: 12px; }
+        .nav-item:hover { background-color: #eaebef; }
+        .nav-item.active { background-color: #d3e3fd; color: #041e49; font-weight: 600; }
+        .nav-item i { width: 24px; font-size: 18px; }
+
+        .gmail-modal { position: fixed; bottom: 0; right: 0; width: 100%; max-width: 510px; height: 100%; max-height: 500px; background: white; box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14); border-radius: 12px 12px 0 0; display: none; flex-direction: column; z-index: 1000; transition: all 0.3s; }
+        @media (min-width: 768px) { .gmail-modal { right: 70px; width: 510px; height: 450px; border-radius: 8px 8px 0 0; } }
         .gmail-modal.active { display: flex; }
 
-        #sidebar {
-            position: fixed;
-            left: -260px;
-            top: 0;
-            bottom: 0;
-            width: 260px;
-            background: #f6f8fc;
-            z-index: 1500;
-            transition: 0.3s;
-            padding: 20px;
-        }
+        #sidebar { position: fixed; left: -260px; top: 0; bottom: 0; width: 260px; background: #f6f8fc; z-index: 1500; transition: 0.3s; padding: 20px 0; }
         #sidebar.open { left: 0; box-shadow: 10px 0 15px rgba(0,0,0,0.1); }
-        @media (min-width: 1024px) {
-            #sidebar { position: static; left: 0; width: 256px; display: block; box-shadow: none; }
-            #mobile-overlay { display: none !important; }
-        }
+        @media (min-width: 1024px) { #sidebar { position: static; left: 0; width: 256px; display: block; box-shadow: none; } #mobile-overlay { display: none !important; } }
 
         .mail-item { border-bottom: 1px solid #f1f3f4; transition: all 0.1s; background-color: white; }
-        .mail-item.unread { background-color: #f2f6fc; font-weight: 700; }
+        .mail-item.unread { background-color: #f2f6fc; }
         .unread-dot { width: 8px; height: 8px; background-color: #1a73e8; border-radius: 50%; }
         
-        .action-group { opacity: 0; }
-        @media (max-width: 768px) { .action-group { opacity: 1; } }
-        .mail-item:hover .action-group { opacity: 1; }
+        .action-group { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .mail-item:hover .action-group { opacity: 1; pointer-events: auto; }
+        @media (max-width: 768px) { .action-group { opacity: 1; position: static; } }
 
+        .mail-checkbox { cursor: pointer; width: 16px; height: 16px; accent-color: #444; }
         .swal2-container { z-index: 3000 !important; }
     </style>
 </head>
 <body class="flex flex-col h-screen">
 
+    <div id="page-loader">
+        <i class="fa-solid fa-file-pdf text-red-500 text-5xl"></i>
+        <div class="loading-bar-container">
+            <div id="loading-progress" class="loading-bar-progress"></div>
+        </div>
+        <div class="mt-4 text-xs text-gray-400 font-medium tracking-widest uppercase">CloudPDF</div>
+    </div>
+
     <div id="mobile-overlay" class="fixed inset-0 bg-black/30 z-[1400] hidden" onclick="toggleSidebar()"></div>
 
     <header class="h-16 flex items-center px-4 justify-between bg-white border-b border-gray-100 sticky top-0 z-[1300]">
         <div class="flex items-center gap-2 lg:gap-4 min-w-fit">
-            <button onclick="toggleSidebar()" class="p-3 hover:bg-gray-200 rounded-full transition-colors"><i class="fa-solid fa-bars text-gray-600"></i></button>
+            <button onclick="toggleSidebar()" class="p-3 hover:bg-gray-200 rounded-full transition-colors lg:hidden"><i class="fa-solid fa-bars text-gray-600"></i></button>
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-file-pdf text-red-500 text-2xl"></i>
-                <span class="text-lg lg:text-xl font-medium text-gray-600 hidden sm:inline">CloudPDF</span>
+                <span class="text-lg lg:text-xl font-medium text-gray-700 hidden sm:inline">CloudPDF</span>
             </div>
         </div>
         <div class="flex-1 max-w-2xl px-2 lg:px-4">
             <div class="relative flex items-center bg-[#eaf1fb] rounded-full focus-within:bg-white focus-within:shadow-md transition-all">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 text-gray-500 text-sm"></i>
-                <input type="text" id="searchEmail" placeholder="ค้นหา..." class="w-full pl-11 pr-4 py-2 lg:py-3 bg-transparent border-none outline-none text-sm lg:text-md" onkeypress="if(event.key === 'Enter') loadData()">
+                <input type="text" id="searchEmail" placeholder="ค้นหาเอกสาร..." class="w-full pl-11 pr-4 py-2 lg:py-3 bg-transparent border-none outline-none text-sm" onkeypress="if(event.key === 'Enter') loadData(currentFilter)">
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <div onclick="handleLogout()" id="userCircle" class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-blue-700 flex items-center justify-center text-white text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity shadow-sm">?</div>
+            <div onclick="handleLogout()" id="userCircle" class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-blue-700 flex items-center justify-center text-white text-sm font-medium cursor-pointer shadow-sm">?</div>
         </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden p-0 lg:p-2 gap-0 lg:gap-2">
         <aside id="sidebar" class="flex flex-col">
-            <button onclick="toggleComposeModal(); if(window.innerWidth < 1024) toggleSidebar();" class="flex items-center justify-center lg:justify-start gap-4 px-6 py-4 bg-[#c2e7ff] text-[#001d35] rounded-2xl mb-6 font-semibold hover:shadow-md transition-all w-full">
-                <i class="fa-solid fa-pencil text-lg"></i> <span class="inline">เขียน</span>
-            </button>
-            <nav class="space-y-1">
-                <button onclick="loadData(); if(window.innerWidth < 1024) toggleSidebar();" class="w-full flex items-center justify-between px-6 py-3 bg-[#d3e3fd] text-[#041e49] rounded-full text-sm font-bold">
-                    <div class="flex items-center gap-4">
-                        <i class="fa-solid fa-inbox text-lg"></i> กล่องจดหมาย
-                    </div>
-                    <span id="badge-count" class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
+            <div class="px-4 mb-4">
+                <button onclick="toggleComposeModal()" class="flex items-center gap-4 px-6 py-4 bg-[#c2e7ff] text-[#001d35] rounded-2xl font-semibold hover:shadow-md transition-all">
+                    <i class="fa-solid fa-pencil text-lg"></i> <span>เขียน</span>
                 </button>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto">
+                <div id="nav-all" onclick="loadData('all')" class="nav-item active">
+                    <div class="flex items-center gap-4"><i class="fa-solid fa-inbox"></i> รายการทั้งหมด</div>
+                </div>
+                <div id="nav-inbox" onclick="loadData('inbox')" class="nav-item">
+                    <div class="flex items-center gap-4"><i class="fa-regular fa-envelope"></i> กล่องจดหมาย</div>
+                    <span id="badge-inbox" class="text-xs font-bold text-blue-600"></span>
+                </div>
+                <div id="nav-sent" onclick="loadData('sent')" class="nav-item">
+                    <div class="flex items-center gap-4"><i class="fa-regular fa-paper-plane"></i> ส่งแล้ว</div>
+                </div>
+                <div id="nav-rejected" onclick="loadData('rejected')" class="nav-item">
+                    <div class="flex items-center gap-4"><i class="fa-solid fa-circle-exclamation"></i> ถูกตีกลับ</div>
+                    <span id="badge-rejected" class="text-xs font-bold text-red-500"></span>
+                </div>
             </nav>
         </aside>
 
         <main class="flex-1 bg-white lg:rounded-2xl shadow-sm flex flex-col overflow-hidden border border-gray-100">
-            <div class="px-4 py-3 flex items-center justify-between border-b border-gray-100 bg-gray-50/50">
-                <div class="flex items-center gap-4 text-gray-500">
-                    <button onclick="loadData()" class="hover:bg-gray-200 p-2 rounded-full transition-colors"><i class="fa-solid fa-rotate-right"></i></button>
-                    <span id="userDisplayName" class="text-[10px] lg:text-xs font-medium text-gray-400 truncate max-w-[150px]"></span>
+            <div class="px-4 py-2 flex items-center justify-between border-b border-gray-100 bg-white">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-1 hover:bg-gray-100 p-1.5 rounded cursor-pointer group">
+                        <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)" class="mail-checkbox">
+                        <i class="fa-solid fa-caret-down text-[10px] text-gray-500 group-hover:text-black"></i>
+                    </div>
+                    <button onclick="loadData(currentFilter)" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600" title="รีเฟรช">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <div id="bulk-actions" class="hidden flex items-center gap-2 border-l pl-4">
+                        <button onclick="bulkDelete()" class="p-2 hover:bg-red-50 rounded-full text-gray-500 hover:text-red-600" title="ลบรายการที่เลือก">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="text-[10px] lg:text-xs text-gray-500 font-medium"><span id="result-count">0</span> รายการ</div>
+                <div class="flex items-center gap-2">
+                    <span id="current-view-title" class="hidden sm:inline text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-2">รายการทั้งหมด</span>
+                    <div class="text-[10px] lg:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md"><span id="result-count">0</span> รายการ</div>
+                </div>
             </div>
             
             <div id="inbox-list" class="overflow-y-auto flex-1">
@@ -116,32 +138,34 @@
     </div>
 
     <div id="composeModal" class="gmail-modal">
-        <div class="flex items-center justify-between p-4 bg-gray-100/50 rounded-t-xl border-b">
-            <span class="font-medium">ข้อความใหม่</span>
-            <i onclick="toggleComposeModal()" class="fa-solid fa-xmark cursor-pointer p-1"></i>
+        <div class="flex items-center justify-between p-3 bg-[#f2f6fc] rounded-t-xl">
+            <span class="text-sm font-bold text-gray-700">ข้อความใหม่</span>
+            <i onclick="toggleComposeModal()" class="fa-solid fa-xmark cursor-pointer p-1 text-gray-500 hover:text-black"></i>
         </div>
-        <form id="uploadForm" class="flex-1 flex flex-col overflow-y-auto">
-            <div class="px-4 py-1 border-b flex items-center"><label class="text-xs text-gray-400 w-12">จาก</label><input type="email" id="sender" class="flex-1 p-2 outline-none text-sm bg-transparent" readonly></div>
-            <div class="px-4 py-1 border-b flex items-center"><label class="text-xs text-gray-400 w-12">ถึง</label><input type="email" id="receiver" class="flex-1 p-2 outline-none text-sm" required placeholder="อีเมลผู้รับ"></div>
-            <div class="px-4 py-1 border-b flex items-center"><input type="text" id="subject" placeholder="เรื่อง" class="w-full p-2 outline-none text-sm font-medium" required></div>
-            <div class="flex-1 p-4 lg:p-6 min-h-[150px]">
-                <div class="group relative w-full h-full border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center hover:bg-gray-50 transition-all cursor-pointer">
-                    <input type="file" id="fileInput" accept=".pdf" required class="absolute inset-0 opacity-0 cursor-pointer">
-                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-300 mb-2 group-hover:text-blue-500"></i>
-                    <p id="fileName" class="text-[11px] text-gray-400 px-4 text-center">แตะเพื่อแนบไฟล์ PDF</p>
-                </div>
+        <form id="uploadForm" class="flex-1 flex flex-col">
+            <input type="email" id="receiver" class="px-4 py-2 border-b outline-none text-sm" required placeholder="ถึง (อีเมล)">
+            <input type="text" id="subject" class="px-4 py-2 border-b outline-none text-sm" required placeholder="ชื่อเรื่อง">
+            <input type="hidden" id="sender">
+            <div class="flex-1 p-8 flex flex-col items-center justify-center">
+                <label class="cursor-pointer group flex flex-col items-center">
+                    <input type="file" id="fileInput" accept=".pdf" required class="hidden">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                        <i class="fa-solid fa-paperclip text-2xl text-gray-400 group-hover:text-blue-500"></i>
+                    </div>
+                    <span id="fileName" class="mt-2 text-xs text-gray-500">แนบไฟล์ PDF</span>
+                </label>
             </div>
-            <div class="p-4 border-t bg-white sticky bottom-0 flex items-center justify-between">
-                <button type="submit" id="submitBtn" class="bg-[#0b57d0] text-white px-8 py-2.5 rounded-full font-semibold text-sm shadow-lg active:scale-95 transition-all w-full lg:w-auto">ส่งเอกสาร</button>
+            <div class="p-4 border-t flex items-center gap-4">
+                <button type="submit" id="submitBtn" class="bg-[#0b57d0] text-white px-8 py-2 rounded-full font-semibold text-sm shadow hover:bg-[#0842a0]">ส่ง</button>
             </div>
         </form>
     </div>
 
     <div id="previewModal" class="hidden fixed inset-0 bg-black/70 z-[2000] flex items-center justify-center p-0 lg:p-12">
-        <div class="bg-white w-full h-full lg:rounded-xl flex flex-col shadow-2xl relative">
-            <div class="p-4 flex justify-between items-center border-b bg-gray-50">
-                <h3 id="previewTitle" class="font-bold text-gray-700 truncate text-sm lg:text-base mr-8"></h3>
-                <button onclick="closePreview()" class="text-2xl lg:text-3xl text-gray-400 hover:text-red-500">&times;</button>
+        <div class="bg-white w-full h-full lg:rounded-xl flex flex-col relative">
+            <div class="p-4 flex justify-between items-center border-b">
+                <h3 id="previewTitle" class="font-bold text-gray-700 truncate"></h3>
+                <button onclick="closePreview()" class="text-3xl text-gray-400">&times;</button>
             </div>
             <iframe id="previewFrame" class="flex-1 w-full" src=""></iframe>
         </div>
@@ -153,193 +177,236 @@
         const supabaseClient = window.supabase.createClient(SB_URL, SB_KEY);
 
         let currentUser = null;
+        let currentFilter = 'all'; 
+        let selectedIds = new Set();
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-overlay');
-            if(window.innerWidth < 1024) {
-                sidebar.classList.toggle('open');
-                overlay.classList.toggle('hidden');
-            }
-        }
-
+        // ปรับปรุงการโหลดให้ Progress Bar ขยับตามสถานะจริง
         async function checkAuth() {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) { window.location.href = 'login.html'; } 
-            else {
+            const loader = document.getElementById('page-loader');
+            const progressBar = document.getElementById('loading-progress');
+            
+            try {
+                progressBar.style.width = '30%'; // เริ่มต้น
+
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (!user) { window.location.href = 'login.html'; return; } 
+                
+                progressBar.style.width = '60%'; // หลังเช็ค Auth สำเร็จ
                 currentUser = user;
                 document.getElementById('userCircle').innerText = user.email.charAt(0).toUpperCase();
-                document.getElementById('userDisplayName').innerText = user.email;
                 document.getElementById('sender').value = user.email;
-                loadData();
+                
+                await loadData('all');
                 subscribeToChanges();
+
+                progressBar.style.width = '100%'; // โหลดข้อมูลครบ
+
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    loader.style.visibility = 'hidden';
+                    document.querySelector('main').classList.add('content-ready');
+                    setTimeout(() => loader.classList.add('hidden'), 500);
+                }, 300);
+
+            } catch (err) { window.location.href = 'login.html'; }
+        }
+        window.onload = checkAuth;
+
+        // --- ฟังก์ชันอื่นๆ (เหมือนเดิม) ---
+        function subscribeToChanges() {
+            supabaseClient.channel('public:documents').on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => loadData(currentFilter)).subscribe();
+        }
+
+        function toggleSelectAll(master) {
+            const checkboxes = document.querySelectorAll('.mail-checkbox:not(#selectAll)');
+            selectedIds.clear();
+            checkboxes.forEach(cb => {
+                cb.checked = master.checked;
+                if (master.checked) selectedIds.add(parseInt(cb.getAttribute('data-id')));
+            });
+            updateBulkUI();
+        }
+
+        function toggleItemSelect(id, cb) {
+            if (cb.checked) selectedIds.add(id);
+            else {
+                selectedIds.delete(id);
+                document.getElementById('selectAll').checked = false;
+            }
+            updateBulkUI();
+        }
+
+        function updateBulkUI() {
+            const bulkActions = document.getElementById('bulk-actions');
+            bulkActions.style.display = selectedIds.size > 0 ? 'flex' : 'none';
+        }
+
+        async function bulkDelete() {
+            const { isConfirmed } = await Swal.fire({
+                title: `ลบ ${selectedIds.size} รายการ?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'ลบทั้งหมด'
+            });
+            if (isConfirmed) {
+                const idsArray = Array.from(selectedIds);
+                const { error } = await supabaseClient.from('documents').delete().in('id', idsArray);
+                if (!error) {
+                    selectedIds.clear();
+                    document.getElementById('selectAll').checked = false;
+                    updateBulkUI();
+                    loadData(currentFilter);
+                }
             }
         }
 
-        window.onload = checkAuth;
-
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('mobile-overlay').classList.toggle('hidden'); }
         function toggleComposeModal() { document.getElementById('composeModal').classList.toggle('active'); }
+        function closePreview() { document.getElementById('previewModal').classList.add('hidden'); document.getElementById('previewFrame').src = ""; }
 
-        function subscribeToChanges() {
-            supabaseClient
-                .channel('public:documents')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, payload => {
-                    loadData();
-                })
-                .subscribe();
+        async function loadData(filter = 'all') {
+            currentFilter = filter;
+            selectedIds.clear();
+            document.getElementById('selectAll').checked = false;
+            updateBulkUI();
+
+            const search = document.getElementById('searchEmail').value.trim();
+            const listContent = document.getElementById('list-content');
+            const statusContainer = document.getElementById('status-container');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const navEl = document.getElementById(`nav-${filter}`);
+            if(navEl) navEl.classList.add('active');
+            
+            const titles = { 'all': 'รายการทั้งหมด', 'inbox': 'กล่องจดหมาย', 'sent': 'ส่งแล้ว', 'rejected': 'ถูกตีกลับ' };
+            document.getElementById('current-view-title').innerText = titles[filter];
+
+            try {
+                let query = supabaseClient.from('documents').select('*');
+
+                if (currentUser.email !== 'admin@gmail.com') {
+                    if (filter === 'inbox') query = query.eq('receiver', currentUser.email);
+                    else if (filter === 'sent') query = query.eq('sender', currentUser.email);
+                    else if (filter === 'rejected') query = query.eq('status', 'rejected').or(`sender.eq.${currentUser.email},receiver.eq.${currentUser.email}`);
+                    else query = query.or(`sender.eq.${currentUser.email},receiver.eq.${currentUser.email}`);
+                } else if (filter !== 'all') {
+                    if (filter === 'rejected') query = query.eq('status', 'rejected');
+                }
+
+                if (search) query = query.or(`sender.ilike.%${search}%,subject.ilike.%${search}%,receiver.ilike.%${search}%`);
+
+                const { data, error } = await query.order('created_at', { ascending: false });
+                if (error) throw error;
+
+                statusContainer.classList.add('hidden');
+                listContent.classList.remove('hidden');
+                document.getElementById('result-count').innerText = data.length;
+
+                const inboxCount = data.filter(d => !d.is_read && d.receiver === currentUser.email).length;
+                document.getElementById('badge-inbox').innerText = inboxCount > 0 ? inboxCount : '';
+                const rejectedCount = data.filter(d => d.status === 'rejected').length;
+                document.getElementById('badge-rejected').innerText = rejectedCount > 0 ? rejectedCount : '';
+
+                if (data.length === 0) {
+                    listContent.innerHTML = '<div class="p-10 text-center text-gray-400 text-sm">ไม่พบรายการเอกสารในหมวดนี้</div>';
+                    return;
+                }
+
+                const statusMap = {
+                    'pending': { text: 'รอรับ', color: 'bg-amber-100 text-amber-700' },
+                    'received': { text: 'รอเซ็น', color: 'bg-blue-100 text-blue-700' },
+                    'signed': { text: 'เรียบร้อย', color: 'bg-emerald-100 text-emerald-700' },
+                    'rejected': { text: 'ตีกลับ', color: 'bg-red-100 text-red-700' }
+                };
+
+                listContent.innerHTML = data.map(item => {
+                    const st = statusMap[item.status] || { text: item.status, color: 'bg-gray-100 text-gray-600' };
+                    const isUnread = !item.is_read && item.receiver === currentUser.email;
+                    
+                    return `
+                    <div class="mail-item flex items-center px-4 py-2 group cursor-pointer ${isUnread ? 'unread font-bold' : ''}">
+                        <div class="flex items-center gap-3 mr-2">
+                            <input type="checkbox" class="mail-checkbox" data-id="${item.id}" onclick="event.stopPropagation(); toggleItemSelect(${item.id}, this)">
+                            <div class="w-4 flex justify-center">
+                                ${isUnread ? '<div class="unread-dot"></div>' : '<i class="fa-regular fa-star text-gray-300 hover:text-amber-400"></i>'}
+                            </div>
+                        </div>
+                        <div class="flex flex-1 min-w-0 items-center gap-4" onclick="openPreview(${item.id}, '${item.file_url}', '${item.subject}', ${item.is_read})">
+                            <span class="text-sm text-gray-700 w-32 sm:w-40 truncate">${currentUser.email === 'admin@gmail.com' ? item.sender.split('@')[0] : (filter === 'sent' ? 'ถึง: ' + item.receiver.split('@')[0] : item.sender.split('@')[0])}</span>
+                            <div class="flex-1 truncate">
+                                <span class="text-sm text-gray-900">${item.subject}</span>
+                                <span class="ml-2 text-[10px] px-2 py-0.5 rounded-full ${st.color}">${st.text}</span>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-gray-500 ml-2 group-hover:hidden">
+                            ${new Date(item.created_at).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}
+                        </div>
+                        <div class="action-group hidden group-hover:flex items-center gap-1">
+                            ${item.status === 'pending' && item.receiver === currentUser.email ? `<button onclick="event.stopPropagation(); updateStatus(${item.id}, 'received')" title="รับเอกสาร" class="p-2 hover:bg-gray-100 rounded-full text-blue-600"><i class="fa-solid fa-check"></i></button>` : ''}
+                            ${item.status === 'received' && item.receiver === currentUser.email ? `<button onclick="event.stopPropagation(); updateStatus(${item.id}, 'signed')" title="ลงนาม" class="p-2 hover:bg-gray-100 rounded-full text-emerald-600"><i class="fa-solid fa-pen-nib"></i></button>` : ''}
+                            <button onclick="event.stopPropagation(); deleteDoc(${item.id})" title="ลบ" class="p-2 hover:bg-gray-100 rounded-full text-gray-500"><i class="fa-regular fa-trash-can"></i></button>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (err) { statusContainer.innerText = "Error loading data"; }
         }
 
         async function openPreview(id, url, title, isRead) {
             document.getElementById('previewTitle').innerText = title;
             document.getElementById('previewFrame').src = url;
             document.getElementById('previewModal').classList.remove('hidden');
-            if (!isRead) {
+            if (!isRead && currentUser.email !== 'admin@gmail.com') {
                 await supabaseClient.from('documents').update({ is_read: true }).eq('id', id).eq('receiver', currentUser.email);
             }
         }
 
-        function closePreview() {
-            document.getElementById('previewModal').classList.add('hidden');
-            document.getElementById('previewFrame').src = "";
+        async function updateStatus(id, newStatus) {
+            await supabaseClient.from('documents').update({ status: newStatus }).eq('id', id);
+            loadData(currentFilter);
         }
 
-        async function loadData() {
-            const search = document.getElementById('searchEmail').value.trim();
-            const listContent = document.getElementById('list-content');
-            const statusContainer = document.getElementById('status-container');
-            
-            try {
-                let query = supabaseClient.from('documents').select('*');
-                if (search) query = query.or(`sender.ilike.%${search}%,subject.ilike.%${search}%`);
-                const { data, error } = await query.order('created_at', { ascending: false });
-
-                if (error) throw error;
-                statusContainer.classList.add('hidden');
-                listContent.classList.remove('hidden');
-                
-                document.getElementById('result-count').innerText = data.length;
-                document.getElementById('badge-count').innerText = data.filter(d => !d.is_read).length;
-
-                if (data.length === 0) {
-                    listContent.innerHTML = '<div class="p-10 text-center text-gray-400 text-sm">ไม่มีเอกสาร</div>';
-                    return;
-                }
-
-                listContent.innerHTML = data.map(item => `
-                    <div class="mail-item flex items-center px-3 lg:px-4 py-3 group cursor-pointer relative ${!item.is_read ? 'unread' : ''}">
-                        <div class="flex items-center gap-3 mr-3">
-                            <div class="w-2 flex justify-center">
-                                ${!item.is_read ? '<div class="unread-dot"></div>' : ''}
-                            </div>
-                        </div>
-                        <div class="flex flex-1 min-w-0 flex-col lg:flex-row lg:items-center" onclick="openPreview(${item.id}, '${item.file_url}', '${item.subject}', ${item.is_read})">
-                            <span class="text-xs lg:text-sm text-gray-600 lg:w-56 truncate">${item.sender.split('@')[0]}</span>
-                            <div class="flex-1 truncate">
-                                <span class="text-sm text-gray-900">${item.subject || '(ไม่มีชื่อเรื่อง)'}</span>
-                            </div>
-                        </div>
-                        <div class="text-[10px] text-gray-400 ml-2 whitespace-nowrap lg:group-hover:opacity-0 transition-opacity">
-                            ${new Date(item.created_at).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}
-                        </div>
-                        <div class="action-group absolute right-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm pl-2 rounded-l-lg">
-                            <button onclick="deleteDoc(${item.id})" class="p-2 text-gray-400 hover:text-red-500"><i class="fa-regular fa-trash-can"></i></button>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (err) { statusContainer.innerText = "Error loading data"; }
+        async function deleteDoc(id) {
+            const { isConfirmed } = await Swal.fire({ title: 'ลบเอกสาร?', icon: 'warning', showCancelButton: true });
+            if (isConfirmed) { await supabaseClient.from('documents').delete().eq('id', id); loadData(currentFilter); }
         }
 
-        async function handleLogout() {
-            const { isConfirmed } = await Swal.fire({
-                title: 'ออกจากระบบ?',
-                text: "คุณต้องการออกจากบัญชี CloudPDF ใช่หรือไม่",
-                icon: 'question',
-                iconColor: '#0b57d0',
-                showCancelButton: true,
-                confirmButtonColor: '#0b57d0',
-                cancelButtonColor: '#f1f3f4',
-                confirmButtonText: 'ออกจากระบบ',
-                cancelButtonText: 'ยกเลิก',
-                reverseButtons: true,
-                width: window.innerWidth < 768 ? '90%' : '400px',
-                customClass: {
-                    popup: 'rounded-3xl shadow-2xl',
-                    title: 'text-xl font-semibold text-gray-800',
-                    htmlContainer: 'text-gray-500',
-                    confirmButton: 'rounded-full px-8 py-2.5 text-sm font-medium',
-                    cancelButton: 'rounded-full px-8 py-2.5 text-sm font-medium text-gray-600'
-                }
-            });
+        document.getElementById('fileInput').onchange = (e) => { document.getElementById('fileName').innerText = e.target.files[0]?.name || "แนบไฟล์ PDF"; };
 
-            if (isConfirmed) { 
-                await supabaseClient.auth.signOut(); 
-                window.location.href = 'login.html'; 
-            }
-        }
-
-        document.getElementById('fileInput').onchange = (e) => {
-            document.getElementById('fileName').innerText = e.target.files[0]?.name || "แนบไฟล์ PDF";
-        };
-
-        // --- ส่วนแก้ไขใหม่เพื่อป้องกัน Error ชื่อไฟล์ภาษาไทย ---
         document.getElementById('uploadForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const file = document.getElementById('fileInput').files[0];
             if(!file) return;
 
-            btn.disabled = true; btn.innerText = "กำลังส่ง...";
-            
-            // เปลี่ยนชื่อไฟล์เป็น Timestamp เพื่อป้องกันภาษาไทยมีปัญหาใน URL
-            const fileExt = file.name.split('.').pop();
-            const safeFileName = `${Date.now()}.${fileExt}`; 
-            const filePath = `uploads/${safeFileName}`;
+            btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch animate-spin mr-2"></i> กำลังส่ง...';
+            const safeFileName = `${Date.now()}-${file.name}`; 
 
             try {
-                const { error: uploadError } = await supabaseClient.storage.from('pdfs').upload(filePath, file);
-                if (uploadError) throw uploadError;
-
-                const { data: urlData } = supabaseClient.storage.from('pdfs').getPublicUrl(filePath);
+                await supabaseClient.storage.from('pdfs').upload(`uploads/${safeFileName}`, file);
+                const { data: urlData } = supabaseClient.storage.from('pdfs').getPublicUrl(`uploads/${safeFileName}`);
                 
-                const { error: insertError } = await supabaseClient.from('documents').insert([{
+                await supabaseClient.from('documents').insert([{
                     sender: currentUser.email,
                     receiver: document.getElementById('receiver').value,
                     subject: document.getElementById('subject').value,
                     file_url: urlData.publicUrl,
-                    is_read: false
+                    status: 'pending'
                 }]);
                 
-                if (insertError) throw insertError;
-                
-                Swal.fire({ icon: 'success', title: 'ส่งสำเร็จ', timer: 1000, showConfirmButton: false });
-                toggleComposeModal(); 
-                loadData(); 
-                e.target.reset();
-                document.getElementById('fileName').innerText = "แตะเพื่อแนบไฟล์ PDF";
-            } catch (err) { 
-                Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: "ไม่สามารถส่งไฟล์ได้ในขณะนี้" }); 
-                console.error(err);
-            }
-            finally { btn.disabled = false; btn.innerText = "ส่งเอกสาร"; }
+                Swal.fire({ icon: 'success', title: 'ส่งสำเร็จ', timer: 1500, showConfirmButton: false });
+                toggleComposeModal(); loadData('sent'); e.target.reset();
+                document.getElementById('fileName').innerText = "แนบไฟล์ PDF";
+            } catch (err) { Swal.fire('Error', "ไม่สามารถส่งได้", 'error'); } 
+            finally { btn.disabled = false; btn.innerText = "ส่ง"; }
         };
 
-        async function deleteDoc(id) {
-            const { isConfirmed } = await Swal.fire({
-                title: 'ลบรายการ?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'ลบเลย',
-                cancelButtonText: 'ยกเลิก',
-                customClass: {
-                    popup: 'rounded-3xl',
-                    confirmButton: 'rounded-full px-6 py-2',
-                    cancelButton: 'rounded-full px-6 py-2'
-                }
-            });
+        async function handleLogout() {
+            const { isConfirmed } = await Swal.fire({ title: 'ออกจากระบบ?', showCancelButton: true });
             if (isConfirmed) { 
-                await supabaseClient.from('documents').delete().eq('id', id).eq('receiver', currentUser.email);
-                loadData(); 
+                await supabaseClient.auth.signOut(); 
+                document.body.style.opacity = '0';
+                setTimeout(() => { window.location.href = 'login.html'; }, 500);
             }
         }
     </script>
