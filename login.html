@@ -12,46 +12,27 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
         
-        /* Smooth Entry */
         body { 
             font-family: 'Inter', 'Kanit', sans-serif; 
             background-color: #f6f8fc; 
-            opacity: 0; 
-            transition: opacity 0.6s ease-in-out; 
         }
-        body.loaded { opacity: 1; }
-        
         .login-card { 
             background: white; 
             border-radius: 24px; 
             box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); 
         }
-        
-        /* Layer สำหรับจังหวะสลับหน้า */
-        #transition-layer { 
-            position: fixed; 
-            inset: 0; 
-            background: white; 
-            z-index: 9999; 
-            display: none; 
-            opacity: 0; 
-            transition: opacity 0.4s ease; 
-        }
-
         .hidden-field { display: none; }
     </style>
 </head>
 <body class="h-screen flex items-center justify-center">
-    <div id="transition-layer"></div>
 
     <div class="login-card w-full max-w-[450px] p-10 mx-4">
         <div class="text-center mb-8">
-            <div class="flex justify-center items-center gap-2 mb-4">
-                <i class="fa-solid fa-file-pdf text-red-500 text-3xl"></i>
-                <span class="text-2xl font-semibold text-gray-700">CloudPDF</span>
-            </div>
-            <h1 id="formTitle" class="text-2xl font-normal text-gray-900 mb-2">เข้าสู่ระบบ</h1>
-            <p id="formSubTitle" class="text-gray-600">ใช้บัญชี CloudPDF ของคุณ</p>
+            <img src="https://www.abhaiherb.com/_nuxt/img/logo-large.f806b04.png" 
+                 class="h-16 w-auto mx-auto mb-4" 
+                 alt="Abhaibhubejhr Logo"> 
+            <h1 id="formTitle" class="text-xl font-bold text-gray-800 mb-1">เข้าสู่ระบบ</h1>
+            <p class="text-sm text-gray-500">โรงพยาบาลเจ้าพระยาอภัยภูเบศร</p>
         </div>
 
         <form id="authForm" class="space-y-4">
@@ -63,8 +44,6 @@
                     <option value="สายสมุนไพร">สายสมุนไพร / แพทย์แผนไทย</option>
                     <option value="สายไอที">สายไอที / ระบบสารสนเทศ</option>
                     <option value="สายสนับสนุนบริหาร">สายเอกสาร / ธุรการ / การเงิน</option>
-                    <option value="สายช่างและวิศวกรรม">สายวิศวกรรม / ช่าง</option>
-                    <option value="สายบริการ">สายบริการทั่วไป</option>
                     <option value="สายบริหาร">สายบริหาร / หัวหน้าฝ่าย</option>
                 </select>
             </div>
@@ -81,68 +60,95 @@
         </form>
     </div>
 
-    <script>
-        const SB_URL = 'https://ijxeejypdjwwnejjbxbq.supabase.co'; 
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeGVlanlwZGp3d25lampieGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDA0NzIsImV4cCI6MjA5MzYxNjQ3Mn0.NHCzfKueKHdA763QBWZ_civHzUSUcie9aUqBBt7Yrek'; 
-        const supabaseClient = window.supabase.createClient(SB_URL, SB_KEY);
+<script>
+    const SB_URL = 'https://ijxeejypdjwwnejjbxbq.supabase.co'; 
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeGVlanlwZGp3d25lampieGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDA0NzIsImV4cCI6MjA5MzYxNjQ3Mn0.NHCzfKueKHdA763QBWZ_civHzUSUcie9aUqBBt7Yrek'; 
+    const supabaseClient = window.supabase.createClient(SB_URL, SB_KEY);
 
-        let isLoginMode = true;
+    let isSignUpMode = false;
 
-        window.onload = async () => {
-            document.body.classList.add('loaded');
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) fastForwardToIndex();
-        };
-
-        function fastForwardToIndex() {
-            const layer = document.getElementById('transition-layer');
-            layer.style.display = 'block';
-            setTimeout(() => {
-                layer.style.opacity = '1';
-                setTimeout(() => { window.location.href = 'index.html'; }, 400);
-            }, 10);
+    function toggleMode() {
+        isSignUpMode = !isSignUpMode;
+        document.getElementById('extraFields').classList.toggle('hidden-field');
+        document.getElementById('formTitle').innerText = isSignUpMode ? 'สร้างบัญชีใหม่' : 'เข้าสู่ระบบ';
+        document.getElementById('btnText').innerText = isSignUpMode ? 'ลงทะเบียน' : 'ถัดไป';
+        document.getElementById('switchBtn').innerText = isSignUpMode ? 'มีบัญชีแล้ว? เข้าสู่ระบบ' : 'สร้างบัญชี';
+        
+        // ล้างค่าเมื่อสลับโหมด
+        if (!isSignUpMode) {
+            document.getElementById('fullName').value = '';
+            document.getElementById('department').value = '';
         }
+    }
 
-        function toggleMode() {
-            isLoginMode = !isLoginMode;
-            document.getElementById('extraFields').style.display = isLoginMode ? 'none' : 'block';
-            document.getElementById('formTitle').innerText = isLoginMode ? 'เข้าสู่ระบบ' : 'สร้างบัญชี';
-            document.getElementById('switchBtn').innerText = isLoginMode ? 'สร้างบัญชี' : 'มีบัญชีอยู่แล้ว?';
-            document.getElementById('btnText').innerText = isLoginMode ? 'ถัดไป' : 'ลงทะเบียน';
-        }
+    document.getElementById('authForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const fullName = document.getElementById('fullName').value;
+        const dept = document.getElementById('department').value;
 
-        document.getElementById('authForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('submitBtn');
-            const btnText = document.getElementById('btnText');
-            
-            btn.disabled = true;
-            btnText.innerHTML = '<i class="fa-solid fa-circle-notch animate-spin"></i>';
-
-            try {
-                if (isLoginMode) {
-                    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                    if (error) throw error;
-                    fastForwardToIndex();
-                } else {
-                    const fullName = document.getElementById('fullName').value;
-                    const department = document.getElementById('department').value;
-                    const { error } = await supabaseClient.auth.signUp({ 
-                        email, password, 
-                        options: { data: { full_name: fullName, department: department } } 
-                    });
-                    if (error) throw error;
-                    Swal.fire('สำเร็จ!', 'สร้างบัญชีแล้ว เข้าสู่ระบบได้เลย', 'success').then(() => toggleMode());
-                }
-            } catch (err) {
-                Swal.fire('ผิดพลาด', err.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btnText.innerText = isLoginMode ? "ถัดไป" : "ลงทะเบียน";
+        // Validation เบื้องต้นสำหรับ Sign Up
+        if (isSignUpMode) {
+            if (!fullName || !dept) {
+                Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกชื่อ-นามสกุล และเลือกสายงาน', 'warning');
+                return;
             }
-        };
-    </script>
+        }
+
+        Swal.fire({ 
+            title: 'กำลังดำเนินการ...', 
+            allowOutsideClick: false, 
+            didOpen: () => Swal.showLoading() 
+        });
+
+        try {
+            if (isSignUpMode) {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: { 
+                        data: { 
+                            full_name: fullName, 
+                            department: dept,
+                            display_name: fullName.split(' ')[0] // เก็บชื่อเล่น/ชื่อแรกไว้แสดงผล
+                        } 
+                    }
+                });
+                
+                if (error) throw error;
+
+                // เช็คว่าต้องยืนยันอีเมลหรือไม่
+                if (data.user && data.session === null) {
+                    Swal.fire('ลงทะเบียนสำเร็จ', 'ระบบได้ส่งลิงก์ยืนยันตัวตนไปที่อีเมลของคุณแล้ว กรุณาตรวจสอบกล่องจดหมาย', 'success');
+                } else {
+                    Swal.fire('สำเร็จ', 'สร้างบัญชีเรียบร้อยแล้ว', 'success');
+                }
+                toggleMode();
+            } else {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                
+                // Login สำเร็จ
+                window.location.href = 'index.html';
+            }
+        } catch (err) {
+            let msg = err.message;
+            // แปลข้อความ Error พื้นฐานเป็นภาษาไทย (Optional)
+            if (msg === 'Invalid login credentials') msg = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+            if (msg === 'User already registered') msg = 'อีเมลนี้ถูกใช้งานไปแล้ว';
+            
+            Swal.fire('ข้อผิดพลาด', msg, 'error');
+        }
+    };
+
+    async function checkSession() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            window.location.href = 'index.html';
+        }
+    }
+    window.onload = checkSession;
+</script>
 </body>
 </html>

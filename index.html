@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudPDF | Inbox & Tracking</title>
+    <title>CloudPDF | Admin & Tracking</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
@@ -33,14 +33,10 @@
         .chart-bar-container { height: 100px; display: flex; align-items: flex-end; gap: 4px; }
         .chart-bar { width: 100%; background: #4285f4; border-radius: 2px 2px 0 0; transition: height 0.5s ease; position: relative; }
         .status-badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; text-transform: uppercase; }
-        .st-active { background: #e6f4ea; color: #1e8e3e; }
-        .st-pending { background: #fef7e0; color: #f9ab00; }
 
-        /* --- ปรับปรุง gmail-modal ให้รองรับการล็อค Footer ในมือถือ --- */
         .gmail-modal { 
             position: fixed; bottom: 0; right: 0; width: 100%; max-width: 550px; 
-            height: 100%; max-height: 100vh; background: white; 
-            box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14); 
+            height: 100%; max-height: 100vh; background: white; box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14); 
             display: none; flex-direction: column; z-index: 2000; 
             transition: all 0.3s; 
         }
@@ -49,10 +45,7 @@
         }
         .gmail-modal.active { display: flex; }
 
-        /* ส่วนเนื้อหาที่เลื่อนได้ภายใน Modal */
         .modal-body-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-        
-        /* ส่วนท้ายที่ล็อคติดขอบล่างเสมอ */
         .modal-footer-fixed { flex-shrink: 0; background: white; border-top: 1px solid #f1f3f4; padding: 16px; }
 
         #sidebar { position: fixed; left: -260px; top: 0; bottom: 0; width: 260px; background: #f6f8fc; z-index: 1500; transition: 0.3s; padding: 20px 0; }
@@ -65,13 +58,7 @@
         .unread-dot { width: 8px; height: 8px; background-color: #1a73e8; border-radius: 50%; }
         
         .mail-checkbox { cursor: pointer; width: 15px; height: 15px; border: 2px solid #bdc1c6; border-radius: 2px; accent-color: #444; }
-        
-        .category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 0; }
-        .category-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #444; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background 0.2s; }
-        .category-item:hover { background-color: #f1f3f4; }
-        .category-item input { cursor: pointer; accent-color: #1a73e8; }
 
-        /* --- Profile Dropdown --- */
         #profileDropdown { 
             display: none; 
             position: absolute; 
@@ -131,6 +118,9 @@
         
         #dropdown-header-email { color: #5f6368; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
 
+        .doc-category-select { width: 100%; padding: 8px 12px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; outline: none; background: #fff; cursor: pointer; color: #3c4043; }
+        .doc-category-select:focus { border-color: #1a73e8; }
+
         .attachment-card { display: flex; flex-direction: column; width: 180px; height: 140px; background: white; border: 1px solid #dadce0; border-radius: 4px; overflow: hidden; cursor: pointer; transition: box-shadow 0.2s; position: relative; }
         .attachment-card:hover { box-shadow: 0 1px 3px rgba(60,64,67,0.3); }
         .attachment-preview-area { flex: 1; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f1f3f4; }
@@ -144,23 +134,51 @@
 </head>
 <body class="flex flex-col h-screen">
 
-    <div id="page-loader">
-        <i class="fa-solid fa-file-pdf text-red-500 text-5xl animate-pulse"></i>
-        <div class="loading-bar-container">
-            <div id="loading-progress" class="loading-bar-progress"></div>
+   <div id="page-loader" class="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center">
+    <div class="flex flex-col items-center">
+        <div class="relative mb-8">
+            <img src="https://www.abhaiherb.com/_nuxt/img/logo-large.f806b04.png" 
+                 class="h-20 lg:h-24 w-auto object-contain animate-pulse relative z-10">
         </div>
-        <div class="mt-4 text-xs text-gray-400 font-medium tracking-widest uppercase">CloudPDF</div>
+
+        <div class="text-center mb-6">
+            <h2 class="text-[#006a4e] font-semibold text-lg tracking-wide mb-1">โรงพยาบาลเจ้าพระยาอภัยภูเบศร</h2>
+            <p class="text-gray-400 text-[10px] uppercase tracking-[0.2em] font-medium">Abhaibhubejhr Hospital System</p>
+        </div>
+
+        <div class="loading-bar-container !h-1.5 !w-64 bg-gray-100 rounded-full overflow-hidden">
+            <div id="loading-progress" class="loading-bar-progress !bg-[#006a4e]" style="width: 0%; height: 100%; transition: width 0.4s;"></div>
+        </div>
+        
+        <div class="mt-4 text-[10px] text-gray-400 italic">
+            กำลังเตรียมข้อมูล...
+        </div>
     </div>
+</div>
 
     <div id="mobile-overlay" class="fixed inset-0 bg-black/30 z-[1400] hidden" onclick="toggleSidebar()"></div>
 
     <header class="h-16 flex items-center px-4 justify-between bg-white border-b border-gray-100 sticky top-0 z-[1300]">
         <div class="flex items-center gap-2 lg:gap-4 min-w-fit">
-            <button onclick="toggleSidebar()" class="p-3 hover:bg-gray-200 rounded-full transition-colors lg:hidden"><i class="fa-solid fa-bars text-gray-600"></i></button>
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-file-pdf text-red-500 text-2xl"></i>
-                <span class="text-lg lg:text-xl font-medium text-gray-700 hidden sm:inline">CloudPDF</span>
-            </div>
+            <button onclick="toggleSidebar()" class="p-3 hover:bg-gray-200 rounded-full transition-colors lg:hidden">
+                <i class="fa-solid fa-bars text-gray-600"></i>
+            </button>
+         <div class="flex items-center gap-3">
+    <div class="flex items-center pr-3 border-r border-gray-200">
+        <img src="https://www.abhaiherb.com/_nuxt/img/logo-large.f806b04.png" 
+             alt="Abhaiherb Logo" 
+             class="h-9 lg:h-11 w-auto object-contain hover:scale-105 transition-transform duration-300">
+    </div>
+    
+    <div class="flex flex-col justify-center">
+        <span class="text-sm lg:text-base font-semibold text-[#006a4e] leading-tight hidden sm:block uppercase tracking-tight">
+            Abhaibhubejhr Hospital
+        </span>
+        <span class="text-xs lg:text-sm font-medium text-gray-500 leading-tight hidden sm:block">
+            โรงพยาบาลเจ้าพระยาอภัยภูเบศร
+        </span>
+    </div>
+</div>
         </div>
         <div class="flex-1 max-w-2xl px-2 lg:px-4">
             <div class="relative flex items-center bg-[#eaf1fb] rounded-full focus-within:bg-white focus-within:shadow-md transition-all">
@@ -169,17 +187,17 @@
             </div>
         </div>
         <div class="flex items-center gap-2 relative">
-            <div onclick="toggleProfileDropdown()" id="userCircle" class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-blue-700 flex items-center justify-center text-white text-sm font-medium cursor-pointer shadow-sm hover:scale-105 transition-transform overflow-hidden">?</div>
+            <div onclick="toggleProfileDropdown()" id="userCircle" class="user-circle-initial w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-blue-700 flex items-center justify-center text-white text-sm font-medium cursor-pointer shadow-sm hover:scale-105 transition-transform overflow-hidden">?</div>
             
             <div id="profileDropdown">
                 <div class="flex flex-col items-center border-b border-gray-100 pb-6 mb-2">
                     <div id="dropdown-header-email" class="truncate w-full text-center">loading...</div>
                     <div class="profile-avatar-large">
                         <img id="dropdown-avatar-img" src="" class="hidden">
-                        <span id="dropdown-avatar-char">?</span>
+                        <span id="dropdown-avatar-char" class="user-circle-initial">?</span>
                         <label for="profileUpload" class="profile-camera-icon">
                             <i class="fa-solid fa-camera"></i>
-                            <input type="file" id="profileUpload" accept="image/*" class="hidden" onchange="handleProfileUpdate(this)">
+                            <input type="file" id="profileUpload" accept="image/*" class="hidden">
                         </label>
                     </div>
                     <div id="dropdown-hi-name" class="text-xl font-medium mt-1 uppercase text-gray-800">Hi!</div>
@@ -191,7 +209,7 @@
                         <span>Hide more accounts</span>
                         <i class="fa-solid fa-chevron-up"></i>
                     </div>
-                    <div class="account-item" onclick="addNewAccount()">
+                    <div class="account-item">
                         <div class="account-item-avatar"><i class="fa-solid fa-plus text-xs"></i></div>
                         <div class="account-item-info">
                             <div class="account-item-name">Add another account</div>
@@ -217,7 +235,7 @@
                 </button>
             </div>
             <nav class="flex-1 overflow-y-auto">
-                <div id="nav-dashboard" onclick="loadDashboard()" class="nav-item">
+                <div id="nav-dashboard" onclick="loadData('dashboard')" class="nav-item hidden">
                     <div class="flex items-center gap-4"><i class="fa-solid fa-chart-pie"></i> แดชบอร์ดสรุป</div>
                 </div>
                 <div id="nav-all" onclick="loadData('all')" class="nav-item active">
@@ -225,7 +243,6 @@
                 </div>
                 <div id="nav-inbox" onclick="loadData('inbox')" class="nav-item">
                     <div class="flex items-center gap-4"><i class="fa-regular fa-envelope"></i> กล่องจดหมาย</div>
-                    <span id="badge-inbox" class="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full hidden">0</span>
                 </div>
                 <div id="nav-sent" onclick="loadData('sent')" class="nav-item">
                     <div class="flex items-center gap-4"><i class="fa-regular fa-paper-plane"></i> ส่งแล้ว</div>
@@ -257,11 +274,16 @@
                     </div>
                     <div class="stat-box lg:col-span-1">
                         <p class="text-[10px] font-bold text-gray-400 uppercase mb-3">Status Progress</p>
-                        <div id="dash-status-bars" class="space-y-2"></div>
+                        <div id="dash-status-bars" class="space-y-2">
+                             </div>
                     </div>
                     <div class="stat-box lg:col-span-1">
                         <p class="text-[10px] font-bold text-gray-400 uppercase mb-3">Recent Growth</p>
-                        <div id="dash-growth-chart" class="chart-bar-container"></div>
+                        <div id="dash-growth-chart" class="chart-bar-container">
+                             <div class="chart-bar" style="height: 40%"></div>
+                             <div class="chart-bar" style="height: 70%"></div>
+                             <div class="chart-bar" style="height: 55%"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
@@ -289,17 +311,12 @@
                 <div class="px-4 py-2 flex items-center justify-between border-b border-gray-100 bg-white">
                     <div class="flex items-center gap-4">
                         <div class="flex items-center gap-1 hover:bg-gray-100 p-1.5 rounded cursor-pointer group">
-                            <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)" class="mail-checkbox">
+                            <input type="checkbox" id="selectAll" class="mail-checkbox">
                             <i class="fa-solid fa-caret-down text-[10px] text-gray-500 group-hover:text-black"></i>
                         </div>
                         <button onclick="loadData(currentFilter)" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
                             <i class="fa-solid fa-rotate-right"></i>
                         </button>
-                        <div id="bulk-actions" class="hidden flex items-center gap-2 border-l pl-4">
-                            <button onclick="bulkDelete()" class="p-2 hover:bg-red-50 rounded-full text-gray-500 hover:text-red-600">
-                                <i class="fa-regular fa-trash-can"></i>
-                            </button>
-                        </div>
                     </div>
                     <div class="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
                         <span id="result-count">0</span> รายการ
@@ -326,15 +343,95 @@
                 <div class="px-4 py-1.5 border-b flex items-center gap-2 shrink-0">
                     <span class="text-sm text-gray-500 w-8">ถึง</span>
                     <input type="email" id="receiver" class="flex-1 outline-none text-sm py-1" required placeholder="อีเมลผู้รับ">
-                </div>
+                 </div>
                 <div class="px-4 py-2 border-b shrink-0">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">ประเภทเอกสาร</span>
-                    <div class="category-grid" id="categoryGroup">
-                        <label class="category-item"><input type="radio" name="docCategory" value="ใบขอซื้อ (PR)" checked> 1. PR</label>
-                        <label class="category-item"><input type="radio" name="docCategory" value="ใบเสนอราคา (Quotation)"> 2. Quotation</label>
-                        <label class="category-item"><input type="radio" name="docCategory" value="ใบสั่งซื้อ (PO)"> 3. PO</label>
-                        <label class="category-item"><input type="radio" name="docCategory" value="ใบรับสินค้า (GRN)"> 4. GRN</label>
-                    </div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">ประเภทเอกสาร</span>
+                    <select id="docCategory" class="doc-category-select">
+                        <optgroup label="1. งานสารบรรณ / ธุรการ">
+                            <option value="หนังสือราชการเข้า–ออก">หนังสือราชการเข้า–ออก</option>
+                            <option value="หนังสือเวียน">หนังสือเวียน</option>
+                            <option value="บันทึกข้อความ">บันทึกข้อความ</option>
+                            <option value="คำสั่ง">คำสั่ง</option>
+                            <option value="ประกาศ">ประกาศ</option>
+                            <option value="หนังสือเชิญประชุม">หนังสือเชิญประชุม</option>
+                            <option value="รายงานการประชุม">รายงานการประชุม</option>
+                            <option value="หนังสือรับรอง">หนังสือรับรอง</option>
+                            <option value="เอกสารส่งต่อภายในหน่วยงาน">เอกสารส่งต่อภายในหน่วยงาน</option>
+                        </optgroup>
+                        <optgroup label="2. งานพัสดุ / จัดซื้อ">
+                            <option value="ใบขอซื้อ (PR)" selected>ใบขอซื้อ (PR)</option>
+                            <option value="ใบสั่งซื้อ (PO)">ใบสั่งซื้อ (PO)</option>
+                            <option value="ใบเสนอราคา">ใบเสนอราคา</option>
+                            <option value="สัญญาจัดซื้อจัดจ้าง">สัญญาจัดซื้อจัดจ้าง</option>
+                            <option value="ใบตรวจรับพัสดุ">ใบตรวจรับพัสดุ</option>
+                            <option value="ใบเบิกวัสดุ">ใบเบิกวัสดุ</option>
+                            <option value="ใบคืนวัสดุ">ใบคืนวัสดุ</option>
+                            <option value="ทะเบียนครุภัณฑ์">ทะเบียนครุภัณฑ์</option>
+                            <option value="รายงานสต๊อกสินค้า">รายงานสต๊อกสินค้า</option>
+                            <option value="เอกสารเปรียบเทียบราคา">เอกสารเปรียบเทียบราคา</option>
+                        </optgroup>
+                        <optgroup label="3. การเงิน / บัญชี">
+                            <option value="ใบแจ้งหนี้">ใบแจ้งหนี้</option>
+                            <option value="ใบเสร็จรับเงิน">ใบเสร็จรับเงิน</option>
+                            <option value="ใบกำกับภาษี">ใบกำกับภาษี</option>
+                            <option value="ใบสำคัญจ่าย">ใบสำคัญจ่าย</option>
+                            <option value="ใบเบิกค่าใช้จ่าย">ใบเบิกค่าใช้จ่าย</option>
+                            <option value="งบประมาณ">งบประมาณ</option>
+                            <option value="รายงานรายรับ–รายจ่าย">รายงานรายรับ–รายจ่าย</option>
+                            <option value="รายงานบัญชีประจำเดือน">รายงานบัญชีประจำเดือน</option>
+                            <option value="เอกสารเบิกเงินราชการ">เอกสารเบิกเงินราชการ</option>
+                        </optgroup>
+                        <optgroup label="4. งานบุคคล (HR)">
+                            <option value="ใบสมัครงาน">ใบสมัครงาน</option>
+                            <option value="สัญญาจ้าง">สัญญาจ้าง</option>
+                            <option value="ประวัติพนักงาน">ประวัติพนักงาน</option>
+                            <option value="ใบลงเวลา">ใบลงเวลา</option>
+                            <option value="ใบลางาน">ใบลางาน</option>
+                            <option value="แบบประเมินผลพนักงาน">แบบประเมินผลพนักงาน</option>
+                            <option value="หนังสืออบรม">หนังสืออบรม</option>
+                            <option value="หนังสือแต่งตั้งตำแหน่ง">หนังสือแต่งตั้งตำแหน่ง</option>
+                            <option value="เอกสารเงินเดือน">เอกสารเงินเดือน</option>
+                        </optgroup>
+                        <optgroup label="5. งานคลัง / โลจิสติกส์">
+                            <option value="ใบรับสินค้า">ใบรับสินค้า</option>
+                            <option value="ใบส่งของ">ใบส่งของ</option>
+                            <option value="เอกสารขนส่ง">เอกสารขนส่ง</option>
+                            <option value="รายงานสินค้าคงคลัง">รายงานสินค้าคงคลัง</option>
+                            <option value="ใบโอนย้ายวัสดุ">ใบโอนย้ายวัสดุ</option>
+                            <option value="ใบตรวจนับสต๊อก">ใบตรวจนับสต๊อก</option>
+                        </optgroup>
+                        <optgroup label="6. งานอาคารสถานที่ / ซ่อมบำรุง">
+                            <option value="ใบแจ้งซ่อม">ใบแจ้งซ่อม</option>
+                            <option value="แผนบำรุงรักษา">แผนบำรุงรักษา</option>
+                            <option value="รายงานตรวจสอบอุปกรณ์">รายงานตรวจสอบอุปกรณ์</option>
+                            <option value="Checklist อาคาร">Checklist อาคาร</option>
+                            <option value="รายงานความปลอดภัย">รายงานความปลอดภัย</option>
+                            <option value="เอกสารควบคุมทรัพย์สิน">เอกสารควบคุมทรัพย์สิน</option>
+                        </optgroup>
+                        <optgroup label="7. IT / ระบบสารสนเทศ">
+                            <option value="ใบแจ้งปัญหาระบบ">ใบแจ้งปัญหาระบบ</option>
+                            <option value="เอกสารขอสิทธิ์ใช้งาน">เอกสารขอสิทธิ์ใช้งาน</option>
+                            <option value="Log การใช้งานระบบ">Log การใช้งานระบบ</option>
+                            <option value="คู่มือระบบ">คู่มือระบบ</option>
+                            <option value="รายงาน Backup">รายงาน Backup</option>
+                            <option value="เอกสารความปลอดภัยข้อมูล">เอกสารความปลอดภัยข้อมูล</option>
+                        </optgroup>
+                        <optgroup label="8. ประชาสัมพันธ์ / บริหาร">
+                            <option value="ข่าวประชาสัมพันธ์">ข่าวประชาสัมพันธ์</option>
+                            <option value="โปสเตอร์กิจกรรม">โปสเตอร์กิจกรรม</option>
+                            <option value="แผนงานโครงการ">แผนงานโครงการ</option>
+                            <option value="KPI หน่วยงาน">KPI หน่วยงาน</option>
+                            <option value="รายงานผลการดำเนินงาน">รายงานผลการดำเนินงาน</option>
+                            <option value="เอกสารประเมินคุณภาพ">เอกสารประเมินคุณภาพองค์กร</option>
+                        </optgroup>
+                        <optgroup label="9. กฎหมาย / สัญญา">
+                            <option value="สัญญาเช่า">สัญญาเช่า</option>
+                            <option value="สัญญาบริการ">สัญญาบริการ</option>
+                            <option value="หนังสือมอบอำนาจ">หนังสือมอบอำนาจ</option>
+                            <option value="NDA">NDA</option>
+                            <option value="เอกสารข้อร้องเรียน">เอกสารข้อร้องเรียน</option>
+                        </optgroup>
+                    </select>
                 </div>
                 <div class="px-4 py-1.5 border-b shrink-0">
                     <input type="text" id="subject" class="w-full outline-none text-sm py-1 font-medium" required placeholder="เรื่อง / หัวข้อเอกสาร">
@@ -349,7 +446,7 @@
                         </div>
                         <div id="imagePreview" class="hidden relative inline-block">
                             <img id="imgPreviewSrc" src="" class="h-20 w-20 object-cover rounded-lg border shadow-sm">
-                            <div onclick="clearAttachment('image')" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer shadow-md"><i class="fa-solid fa-xmark text-[10px]"></i></div>
+                            <div onclick="clearAttachment()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer shadow-md"><i class="fa-solid fa-xmark text-[10px]"></i></div>
                         </div>
                     </div>
                 </div>
@@ -359,8 +456,14 @@
                     <div class="flex items-center gap-1">
                         <button type="submit" id="submitBtn" class="bg-[#0b57d0] text-white px-6 py-2 rounded-full font-medium text-sm hover:bg-[#0842a0] disabled:bg-gray-400">ส่งเอกสาร</button>
                         <div class="flex items-center gap-1 ml-4 text-gray-500">
-                            <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-md cursor-pointer" title="แนบ PDF"><input type="file" id="fileInput" accept=".pdf" class="hidden" multiple onchange="handleFileSelect(this)"><i class="fa-solid fa-paperclip text-sm"></i></label>
-                            <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-md cursor-pointer" title="แนบรูปภาพ"><input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageSelect(this)"><i class="fa-regular fa-image text-sm"></i></label>
+                            <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-md cursor-pointer" title="แนบ PDF">
+                                <input type="file" id="fileInput" accept=".pdf" class="hidden" multiple onchange="handleFileSelect(this)">
+                                <i class="fa-solid fa-paperclip text-sm"></i>
+                            </label>
+                            <label class="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-md cursor-pointer" title="แนบรูปภาพ">
+                                <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageSelect(this)">
+                                <i class="fa-regular fa-image text-sm"></i>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -371,7 +474,7 @@
     <div id="previewModal" class="hidden fixed inset-0 bg-black/70 z-[3000] flex items-center justify-center p-0 lg:p-8">
         <div class="bg-white w-full h-full lg:rounded-xl flex flex-col relative overflow-hidden">
             <div class="p-4 flex justify-between items-center border-b bg-white sticky top-0 z-10">
-                <div id="previewTitle" class="flex-1"></div>
+                <div id="previewTitle" class="flex-1 text-lg font-bold"></div>
                 <button onclick="closePreview()" class="text-3xl text-gray-400 hover:text-gray-600 transition-colors ml-4 leading-none">&times;</button>
             </div>
             <div id="previewContent" class="flex-1 w-full overflow-y-auto bg-white flex flex-col items-center"></div>
@@ -379,205 +482,325 @@
     </div>
 
     <script>
+        // --- 1. Configuration ---
         const SB_URL = 'https://ijxeejypdjwwnejjbxbq.supabase.co'; 
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeGVlanlwZGp3d25lampieGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDA0NzIsImV4cCI6MjA5MzYxNjQ3Mn0.NHCzfKueKHdA763QBWZ_civHzUSUcie9aUqBBt7Yrek'; 
         const supabaseClient = window.supabase.createClient(SB_URL, SB_KEY);
 
-        let currentUser = null;
-        let currentFilter = 'all'; 
-        let selectedIds = new Set();
+        let currentUser = null, currentFilter = 'all', selectedIds = new Set();
 
+        // --- Helper Functions ---
+        function generateCustomID(item) {
+            const docType = (item.category === 'ใบขอซื้อ (PR)') ? 'PR' : 'DOC';
+            const year = new Date(item.created_at).getFullYear();
+            const runningNumber = (item.id.toString().length > 8) 
+                ? item.id.toString().substring(0, 8) 
+                : item.id.toString().padStart(8, '0');
+            return `${docType}-${year}-${runningNumber}`;
+        }
+
+        // --- 2. Auth & Initialization ---
         async function checkAuth() {
             const loader = document.getElementById('page-loader');
             const progressBar = document.getElementById('loading-progress');
             try {
-                progressBar.style.width = '30%';
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                if (!user) { window.location.href = 'login.html'; return; } 
-                progressBar.style.width = '60%';
-                currentUser = user;
+                if (progressBar) progressBar.style.width = '30%';
+                const { data: { user }, error } = await supabaseClient.auth.getUser();
+                
+                if (error || !user) { window.location.href = 'login.html'; return; } 
+
+                currentUser = user; 
                 updateProfileUI(user);
-                document.getElementById('dash-current-date').innerText = new Date().toLocaleDateString('th-TH');
-                await loadData('all');
+                
+                // เช็คสิทธิ์ Admin
+                const isAdmin = (user.email === 'admin@gmail.com');
+
+                if (isAdmin) {
+                    // ถ้าเป็น Admin ให้โชว์ปุ่ม Dashboard และเข้า Dashboard เป็นหน้าแรก
+                    document.getElementById('nav-dashboard').classList.remove('hidden');
+                    await loadData('all');
+                } else {
+                    // ถ้าไม่ใช่ Admin ให้ไปหน้ารายการจดหมายทันที
+                    await loadData('all');
+                }
+
+                if (document.getElementById('dash-current-date')) {
+                    document.getElementById('dash-current-date').innerText = new Date().toLocaleDateString('th-TH');
+                }
+                
                 subscribeToChanges();
-                progressBar.style.width = '100%';
+
+                if (progressBar) progressBar.style.width = '100%';
                 setTimeout(() => {
-                    loader.style.opacity = '0'; loader.style.visibility = 'hidden';
+                    if (loader) { loader.style.opacity = '0'; loader.style.visibility = 'hidden'; }
                     document.querySelector('main').classList.add('content-ready');
-                    setTimeout(() => loader.classList.add('hidden'), 500);
                 }, 300);
-            } catch (err) { window.location.href = 'login.html'; }
+            } catch (err) { 
+                console.error("Auth Error:", err);
+                window.location.href = 'login.html'; 
+            }
         }
         window.onload = checkAuth;
 
-        function updateProfileUI(user) {
-            const userChar = user.email.charAt(0).toUpperCase();
-            const avatarUrl = user.user_metadata?.avatar_url;
-            const mainCircle = document.getElementById('userCircle');
-            const dropChar = document.getElementById('dropdown-avatar-char');
-            const dropImg = document.getElementById('dropdown-avatar-img');
-            if (avatarUrl) {
-                mainCircle.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover">`;
-                dropImg.src = avatarUrl; dropImg.classList.remove('hidden'); dropChar.classList.add('hidden');
-            } else {
-                mainCircle.innerText = userChar; dropImg.classList.add('hidden'); dropChar.innerText = userChar; dropChar.classList.remove('hidden');
+        // --- 3. Database & View Functions ---
+        async function loadData(filter = 'all') {
+            // ป้องกัน Staff พยายามเข้าหน้า Dashboard
+            if (filter === 'dashboard' && currentUser.email !== 'admin@gmail.com') {
+                filter = 'all';
             }
-            document.getElementById('dropdown-header-email').innerText = user.email;
-            document.getElementById('dropdown-hi-name').innerText = `Hi, ${user.email.split('@')[0]}!`;
-        }
 
-        async function handleProfileUpdate(input) {
-            const file = input.files[0];
-            if (!file) return;
-            Swal.fire({ title: 'กำลังอัปโหลด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            currentFilter = filter;
+            const dashView = document.getElementById('dashboard-view');
+            const listView = document.getElementById('list-view');
+            const statusContainer = document.getElementById('status-container');
+            const listContent = document.getElementById('list-content');
+
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            if (filter === 'dashboard') {
+                if (dashView) dashView.classList.remove('hidden');
+                if (listView) listView.classList.add('hidden');
+                if (document.getElementById('nav-dashboard')) document.getElementById('nav-dashboard').classList.add('active');
+                await loadDashboard(); 
+                return;
+            }
+
+            if (dashView) dashView.classList.add('hidden');
+            if (listView) listView.classList.remove('hidden');
+            if (statusContainer) statusContainer.classList.remove('hidden');
+            if (listContent) listContent.classList.add('hidden');
+            
+            if (document.getElementById(`nav-${filter}`)) document.getElementById(`nav-${filter}`).classList.add('active');
+
             try {
-                const fileExt = file.name.split('.').pop();
-                const fileName = `avatar_${currentUser.id}_${Date.now()}.${fileExt}`;
-                const filePath = `avatars/${fileName}`;
-                const { error: uploadError } = await supabaseClient.storage.from('pdfs').upload(filePath, file);
-                if (uploadError) throw uploadError;
-                const { data: { publicUrl } } = supabaseClient.storage.from('pdfs').getPublicUrl(filePath);
-                const { error: updateError } = await supabaseClient.auth.updateUser({ data: { avatar_url: publicUrl } });
-                if (updateError) throw updateError;
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                currentUser = user; updateProfileUI(user);
-                Swal.fire({ icon: 'success', title: 'อัปเดตรูปโปรไฟล์แล้ว', timer: 1500, showConfirmButton: false });
-            } catch (error) { Swal.fire('ผิดพลาด', error.message, 'error'); }
-        }
+                let q = supabaseClient.from('documents').select('*');
+                
+                if (currentUser.email !== 'admin@gmail.com') {
+                    if (filter === 'inbox') q = q.eq('receiver_email', currentUser.email);
+                    else if (filter === 'sent') q = q.eq('sender_email', currentUser.email);
+                    else q = q.or(`sender_email.eq.${currentUser.email},receiver_email.eq.${currentUser.email}`);
+                }
+                
+                const search = document.getElementById('searchEmail').value.trim();
+                if (search) q = q.or(`sender_email.ilike.%${search}%,subject.ilike.%${search}%`);
+                
+                const { data, error } = await q.order('created_at', { ascending: false });
+                if (error) throw error;
 
-        async function addNewAccount() {
-            const { isConfirmed } = await Swal.fire({ title: 'Add another account', text: 'คุณต้องการออกจากบัญชีปัจจุบันเพื่อเข้าสู่ระบบด้วยบัญชีอื่นใช่หรือไม่?', icon: 'question', showCancelButton: true, confirmButtonText: 'ใช่', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#1a73e8' });
-            if (isConfirmed) { try { await supabaseClient.auth.signOut(); window.location.href = 'login.html'; } catch (error) { Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถดำเนินการได้ในขณะนี้', 'error'); } }
-        }
+                if (document.getElementById('result-count')) document.getElementById('result-count').innerText = data.length;
+                if (statusContainer) statusContainer.classList.add('hidden');
+                
+                if (listContent) {
+                    listContent.classList.remove('hidden');
+                    if (data.length === 0) {
+                        listContent.innerHTML = `<div class="p-20 text-center text-gray-400 text-sm">ไม่พบเอกสาร</div>`;
+                        return;
+                    }
 
-        function toggleProfileDropdown() { document.getElementById('profileDropdown').classList.toggle('active'); }
-        window.addEventListener('click', function(e) {
-            const dropdown = document.getElementById('profileDropdown');
-            const userCircle = document.getElementById('userCircle');
-            if (dropdown && !dropdown.contains(e.target) && !userCircle.contains(e.target)) { dropdown.classList.remove('active'); }
-        });
-
-        function subscribeToChanges() {
-            supabaseClient.channel('public:documents').on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => {
-                if(currentFilter === 'dashboard') loadDashboard(); else loadData(currentFilter);
-            }).subscribe();
+                    listContent.innerHTML = data.map(item => {
+                        const isUnread = !item.is_read && item.receiver_email === currentUser.email;
+                        const date = new Date(item.created_at).toLocaleDateString('th-TH', {day:'numeric', month:'short'});
+                        return `
+                        <div class="mail-item flex items-center px-4 group cursor-pointer ${isUnread ? 'unread font-bold' : ''}" onclick="openPreview('${encodeURIComponent(JSON.stringify(item))}')">
+                            <div class="w-4 flex justify-center mr-4 shrink-0">${isUnread ? '<div class="unread-dot"></div>' : '<i class="fa-regular fa-star text-gray-200"></i>'}</div>
+                            <div class="w-48 shrink-0 truncate text-sm text-gray-600">${item.sender_email.split('@')[0]}</div>
+                            <div class="flex-1 truncate text-sm text-gray-700">
+                                <span>${item.subject}</span>
+                                <span class="text-gray-400 font-normal"> - ${item.category}</span>
+                            </div>
+                            <div class="text-[11px] text-gray-500 min-w-[60px] text-right">${date}</div>
+                        </div>`;
+                    }).join('');
+                }
+            } catch (err) { console.error("LoadData Error:", err); }
         }
 
         async function loadDashboard() {
-            currentFilter = 'dashboard';
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.getElementById('nav-dashboard').classList.add('active');
-            document.getElementById('list-view').classList.add('hidden');
-            document.getElementById('dashboard-view').classList.remove('hidden');
-            const { data, error } = await supabaseClient.from('documents').select('*');
-            if (error) return;
-            document.getElementById('dash-total-count').innerText = data.length;
-            const stats = { Read: data.filter(d => d.is_read).length, Unread: data.filter(d => !d.is_read).length, Sent: data.filter(d => d.sender === currentUser.email).length };
-            document.getElementById('dash-status-bars').innerHTML = Object.entries(stats).map(([label, count]) => `<div class="flex items-center gap-2 text-[10px]"><span class="w-12 font-bold">${label}</span><div class="flex-1 bg-gray-200 h-1.5 rounded-full overflow-hidden"><div class="bg-blue-500 h-full" style="width: ${(count/data.length*100) || 0}%"></div></div><span class="w-4 text-right">${count}</span></div>`).join('');
-            document.getElementById('dash-growth-chart').innerHTML = data.slice(0, 7).map(d => `<div class="chart-bar" style="height: ${Math.floor(Math.random() * 80) + 20}%"></div>`).join('');
-            document.getElementById('dash-table-body').innerHTML = data.slice(0, 5).map(item => `<tr class="border-b hover:bg-gray-50 transition-colors"><td class="px-4 py-3 font-bold text-gray-700">${item.sender.split('@')[0]}</td><td class="px-4 py-3 text-gray-500 truncate max-w-[150px]">${item.subject}</td><td class="px-4 py-3 text-gray-400 text-xs">${new Date(item.created_at).toLocaleDateString()}</td><td class="px-4 py-3"><span class="status-badge ${item.is_read ? 'st-active' : 'st-pending'}">${item.is_read ? 'READ' : 'PENDING'}</span></td></tr>`).join('');
-        }
-
-        async function loadData(filter = 'all') {
-            currentFilter = filter;
-            document.getElementById('dashboard-view').classList.add('hidden');
-            document.getElementById('list-view').classList.remove('hidden');
-            selectedIds.clear(); document.getElementById('selectAll').checked = false; updateBulkUI();
-            if (window.innerWidth < 1024) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobile-overlay').classList.add('hidden'); }
-            const search = document.getElementById('searchEmail').value.trim();
-            const listContent = document.getElementById('list-content');
-            const statusContainer = document.getElementById('status-container');
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`nav-${filter}`)?.classList.add('active');
             try {
-                let query = supabaseClient.from('documents').select('*');
-                if (currentUser.email !== 'admin@gmail.com') {
-                    if (filter === 'inbox') query = query.eq('receiver', currentUser.email);
-                    else if (filter === 'sent') query = query.eq('sender', currentUser.email);
-                    else query = query.or(`sender.eq.${currentUser.email},receiver.eq.${currentUser.email}`);
-                }
-                if (search) query = query.or(`sender.ilike.%${search}%,subject.ilike.%${search}%,receiver.ilike.%${search}%`);
-                const { data, error } = await query.order('created_at', { ascending: false });
+                const { data, error } = await supabaseClient.from('documents').select('*');
                 if (error) throw error;
-                statusContainer.classList.add('hidden'); listContent.classList.remove('hidden');
-                document.getElementById('result-count').innerText = data.length;
-                const unreadCount = data.filter(item => !item.is_read && item.receiver === currentUser.email).length;
-                const badge = document.getElementById('badge-inbox');
-                if (unreadCount > 0) { badge.innerText = unreadCount; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
-                if (data.length === 0) { listContent.innerHTML = `<div class="p-20 text-center text-gray-400 text-sm">ไม่พบเอกสาร</div>`; return; }
-                listContent.innerHTML = data.map(item => {
-                    const isUnread = !item.is_read && item.receiver === currentUser.email;
-                    const itemData = encodeURIComponent(JSON.stringify(item));
-                    const date = new Date(item.created_at).toLocaleDateString('th-TH', {day:'numeric', month:'short'});
-                    return `<div class="mail-item flex items-center px-4 group cursor-pointer ${isUnread ? 'unread' : ''}" onclick="openPreview('${itemData}')"><div class="flex items-center gap-3 mr-4 shrink-0"><input type="checkbox" class="mail-checkbox opacity-30 group-hover:opacity-100" data-id="${item.id}" onclick="event.stopPropagation(); toggleItemSelect(${item.id}, this)"><div class="w-4 flex justify-center">${isUnread ? '<div class="unread-dot"></div>' : '<i class="fa-regular fa-star text-gray-300 hover:text-yellow-400"></i>'}</div></div><div class="w-40 sm:w-56 shrink-0 truncate text-sm ${isUnread ? 'font-bold text-gray-900' : 'text-gray-600'}">${item.sender.split('@')[0]}</div><div class="flex-1 truncate pr-4 text-sm flex items-center gap-2"><span class="${isUnread ? 'font-bold text-gray-900' : 'text-gray-700'}">${item.subject}</span><span class="text-gray-400 font-normal"> - </span><span class="text-gray-400 font-normal truncate">คลิกเพื่อดูรายละเอียดเพิ่มเติม...</span>${(item.file_url || item.image_url) ? `<div class="flex items-center bg-gray-100 px-2 py-0.5 rounded border border-gray-200 ml-2 shrink-0"><i class="fa-solid fa-paperclip text-gray-500 text-[10px] mr-1"></i><span class="text-[10px] text-gray-600 font-medium">ไฟล์แนบ</span></div>` : ''}</div><div class="flex items-center justify-end min-w-[80px]"><div class="text-[11px] text-gray-500 group-hover:hidden whitespace-nowrap">${date}</div><div class="hidden group-hover:flex items-center gap-2"><i onclick="event.stopPropagation(); quickDelete(${item.id})" class="fa-regular fa-trash-can text-gray-400 hover:text-red-500 p-2" title="ลบ"></i></div></div></div>`;
-                }).join('');
-            } catch (err) { statusContainer.innerHTML = `<div class="p-10 text-red-500 text-sm">เกิดข้อผิดพลาด: ${err.message}</div>`; }
+                if (!data) return;
+
+                const total = data.length;
+                const approved = data.filter(d => d.status === 'approved').length;
+                const pending = data.filter(d => d.status === 'pending' || !d.status).length;
+                
+                if (document.getElementById('dash-total-count')) document.getElementById('dash-total-count').innerText = total;
+
+                const statusBars = document.getElementById('dash-status-bars');
+                if (statusBars) {
+                    statusBars.innerHTML = `
+                        <div class="flex justify-between text-[10px] mb-1"><span>Approved</span><span>${approved}</span></div>
+                        <div class="w-full bg-gray-100 h-1.5 rounded-full mb-3"><div class="bg-green-500 h-full rounded-full" style="width: ${(approved/total*100) || 0}%"></div></div>
+                        <div class="flex justify-between text-[10px] mb-1"><span>Pending</span><span>${pending}</span></div>
+                        <div class="w-full bg-gray-100 h-1.5 rounded-full"><div class="bg-orange-400 h-full rounded-full" style="width: ${(pending/total*100) || 0}%"></div></div>
+                    `;
+                }
+
+                const tbody = document.getElementById('dash-table-body');
+                if (tbody) {
+                    tbody.innerHTML = data.slice(0, 8).map(item => `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3 font-bold text-blue-600">${generateCustomID(item)}</td>
+                            <td class="px-4 py-3 text-gray-700">${item.subject}</td>
+                            <td class="px-4 py-3 text-gray-400 text-xs">${new Date(item.created_at).toLocaleDateString()}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded-full text-[10px] font-bold border ${item.status === 'approved' ? 'text-green-600 bg-green-50 border-green-200' : (item.status === 'rejected' ? 'text-red-600 bg-red-50 border-red-200' : 'text-orange-600 bg-orange-50 border-orange-200')}">
+                                    ${item.status || 'pending'}
+                                </span>
+                            </td>
+                        </tr>`).join('');
+                }
+            } catch (err) { console.error("Dashboard Error:", err); }
         }
 
-        async function openPreview(encodedItem) {
-            const item = JSON.parse(decodeURIComponent(encodedItem));
+        async function openPreview(encoded) {
+            const item = JSON.parse(decodeURIComponent(encoded));
             const modal = document.getElementById('previewModal');
-            const content = document.getElementById('previewContent');
-            const title = document.getElementById('previewTitle');
-            if (!item.is_read && (currentUser.email === item.receiver || currentUser.email === 'admin@gmail.com')) { await supabaseClient.from('documents').update({ is_read: true }).eq('id', item.id); }
-            const statusText = item.is_read ? 'ตรวจสอบแล้ว' : 'รอดำเนินการ';
-            const statusColor = item.is_read ? 'text-green-600 bg-green-50' : 'text-orange-600 bg-orange-50';
-            title.innerHTML = `<div class="flex items-center gap-3"><span class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold uppercase">REQ-${item.id}</span><h3 class="font-bold text-gray-800">${item.subject}</h3></div>`;
-            content.innerHTML = `<div class="w-full max-w-4xl p-6 space-y-6"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm space-y-3"><h4 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-info"></i> รายละเอียดเอกสาร</h4><div class="flex justify-between text-sm"><span class="text-gray-400">ประเภท:</span> <span class="font-medium">${item.category || 'ทั่วไป'}</span></div><div class="flex justify-between text-sm"><span class="text-gray-400">ผู้ส่ง:</span> <span class="font-medium">${item.sender}</span></div><div class="flex justify-between text-sm"><span class="text-gray-400">ถึง:</span> <span class="font-medium text-blue-600">${item.receiver}</span></div><div class="flex justify-between text-sm"><span class="text-gray-400">วันที่:</span> <span class="font-medium">${new Date(item.created_at).toLocaleString('th-TH')}</span></div></div><div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center"><span class="text-[10px] font-bold text-gray-400 uppercase mb-2">สถานะปัจจุบัน</span><div class="px-4 py-1 rounded-full text-xs font-bold ${statusColor} mb-3">${statusText}</div><div class="text-sm font-medium text-gray-700">ลำดับขั้นตอน: ${item.is_read ? '2/3' : '1/3'}</div></div></div><div class="bg-gray-50 p-6 rounded-xl border border-dashed border-gray-300"><h4 class="text-xs font-bold text-gray-500 uppercase mb-3">รายละเอียดเพิ่มเติม (Message)</h4><p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">${item.message || 'ไม่มีรายละเอียดเพิ่มเติม'}</p></div><div class="space-y-3"><h4 class="text-sm font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-paperclip text-blue-500"></i> ไฟล์แนบทั้งหมด</h4><div class="flex flex-wrap gap-4">${item.file_url ? item.file_url.split(',').map(url => `<div class="attachment-card shadow-sm border-blue-100" onclick="window.open('${url}', '_blank')"><div class="attachment-preview-area bg-blue-50/30"><i class="fa-solid fa-file-pdf text-red-500"></i></div><div class="attachment-info-strip"><i class="fa-solid fa-file-pdf"></i><span>${url.split('/').pop()}</span></div></div>`).join('') : ''}${item.image_url ? `<div class="attachment-card border-green-100" onclick="window.open('${item.image_url}', '_blank')"><div class="attachment-preview-area p-0 overflow-hidden"><img src="${item.image_url}" class="w-full h-full object-cover"></div></div>` : ''}</div></div></div>`;
+            
+            if (!item.is_read && item.receiver_email === currentUser.email) { 
+                await supabaseClient.from('documents').update({ is_read: true }).eq('id', item.id); 
+            }
+
+            const customID = generateCustomID(item);
+            const statusMap = {
+                'approved': { text: 'อนุมัติแล้ว', color: 'text-green-600 bg-green-50 border-green-200' },
+                'rejected': { text: 'ปฏิเสธ', color: 'text-red-600 bg-red-50 border-red-200' },
+                'pending': { text: 'รอดำเนินการ', color: 'text-orange-600 bg-orange-50 border-orange-200' }
+            };
+            const st = statusMap[item.status] || statusMap['pending'];
+
+            document.getElementById('previewTitle').innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">${customID}</span>
+                    <span class="truncate">${item.subject}</span>
+                </div>`;
+
+            document.getElementById('previewContent').innerHTML = `
+                <div class="w-full max-w-4xl p-6 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-xl border space-y-2">
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">ผู้ส่ง:</span> <b>${item.sender_email}</b></div>
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">ประเภท:</span> <b>${item.category}</b></div>
+                            <div class="flex justify-between text-sm"><span class="text-gray-400">วันที่:</span> <b>${new Date(item.created_at).toLocaleString('th-TH')}</b></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border flex flex-col items-center justify-center">
+                            <div class="px-4 py-1 rounded-full text-xs font-bold border ${st.color} mb-3">${st.text}</div>
+                            ${(currentUser.email === item.receiver_email || currentUser.email === 'admin@gmail.com') ? `
+                                <div class="flex gap-2 w-full">
+                                    <button onclick="updateDocStatus('${item.id}', 'approved')" class="flex-1 py-2 bg-green-600 text-white rounded-lg text-sm font-bold shadow-sm active:scale-95 transition-all">อนุมัติ</button>
+                                    <button onclick="updateDocStatus('${item.id}', 'rejected')" class="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-bold shadow-sm active:scale-95 transition-all">ปฏิเสธ</button>
+                                </div>` : ''}
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-xl border border-dashed min-h-[100px] whitespace-pre-wrap text-gray-700">${item.message_body || 'ไม่มีรายละเอียด'}</div>
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-bold text-gray-800"><i class="fa-solid fa-paperclip text-blue-500 mr-2"></i>ไฟล์แนบ</h4>
+                        <div class="flex flex-wrap gap-4">
+                            ${item.file_url ? item.file_url.split(',').map(url => {
+                                const cleanUrl = url.trim();
+                                const isImg = cleanUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                                return `
+                                <div class="attachment-card" onclick="window.open('${cleanUrl}', '_blank')">
+                                    <div class="attachment-preview-area">${isImg ? `<img src="${cleanUrl}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-file-pdf text-red-500"></i>`}</div>
+                                    <div class="attachment-info-strip"><span>คลิกเปิดไฟล์</span></div>
+                                </div>`;
+                            }).join('') : '<span class="text-gray-400 text-xs">ไม่มีไฟล์แนบ</span>'}
+                        </div>
+                    </div>
+                </div>`;
             modal.classList.remove('hidden');
+        }
+
+        async function updateDocStatus(id, status) {
+            try {
+                const { error } = await supabaseClient.from('documents').update({ status }).eq('id', id);
+                if (error) throw error;
+                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', timer: 1000, showConfirmButton: false });
+                closePreview();
+                loadData(currentFilter);
+            } catch (err) { Swal.fire('Error', err.message, 'error'); }
+        }
+
+        // --- 4. UI Handlers ---
+        function toggleComposeModal() { document.getElementById('composeModal').classList.toggle('active'); }
+        function closePreview() { document.getElementById('previewModal').classList.add('hidden'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('mobile-overlay').classList.toggle('hidden'); }
+        function toggleProfileDropdown() { document.getElementById('profileDropdown').classList.toggle('active'); }
+
+        function updateProfileUI(user) {
+            const char = user.email.charAt(0).toUpperCase();
+            document.querySelectorAll('.user-circle-initial').forEach(el => el.innerText = char);
+            if (document.getElementById('dropdown-header-email')) document.getElementById('dropdown-header-email').innerText = user.email;
+        }
+
+        function handleFileSelect(input) {
+            const display = document.getElementById('pdfListDisplay');
+            if (display) display.innerHTML = Array.from(input.files).map(f => `<div class="text-[10px] bg-gray-100 p-1 rounded border">${f.name}</div>`).join('');
+            document.getElementById('attachmentArea').classList.remove('hidden');
+            document.getElementById('pdfPreview').classList.remove('hidden');
+        }
+
+        function handleImageSelect(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('imgPreviewSrc').src = e.target.result;
+                    document.getElementById('attachmentArea').classList.remove('hidden');
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearAttachment() {
+            document.getElementById('fileInput').value = "";
+            document.getElementById('imageInput').value = "";
+            document.getElementById('attachmentArea').classList.add('hidden');
+            document.getElementById('pdfPreview').classList.add('hidden');
+            document.getElementById('imagePreview').classList.add('hidden');
         }
 
         document.getElementById('uploadForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-            const fileInput = document.getElementById('fileInput');
-            const pdfFiles = Array.from(fileInput.files); 
-            const imgFile = document.getElementById('imageInput').files[0];
-            const selectedCat = document.querySelector('input[name="docCategory"]:checked').value;
-            const message = document.getElementById('messageBody').value; 
-            if(pdfFiles.length === 0 && !imgFile) { Swal.fire('แจ้งเตือน', 'กรุณาแนบไฟล์อย่างน้อย 1 อย่าง', 'warning'); return; }
             btn.disabled = true; btn.innerText = 'กำลังส่ง...';
+            
             try {
-                let pdfUrls = [], imageUrl = null;
-                for (let i = 0; i < pdfFiles.length; i++) {
-                    const file = pdfFiles[i];
-                    const safeName = `${Date.now()}_${i}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-                    const { error: upErr } = await supabaseClient.storage.from('pdfs').upload(`uploads/${safeName}`, file);
-                    if (upErr) throw upErr;
-                    pdfUrls.push(supabaseClient.storage.from('pdfs').getPublicUrl(`uploads/${safeName}`).data.publicUrl);
+                let urls = [];
+                const pdfs = document.getElementById('fileInput').files;
+                const img = document.getElementById('imageInput').files[0];
+                
+                for (let f of pdfs) {
+                    const path = `uploads/${Date.now()}_${f.name}`;
+                    await supabaseClient.storage.from('pdf_attachments').upload(path, f);
+                    urls.push(supabaseClient.storage.from('pdf_attachments').getPublicUrl(path).data.publicUrl);
                 }
-                if (imgFile) {
-                    const safeImgName = `img-${Date.now()}-${imgFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-                    const { error: imgUpErr } = await supabaseClient.storage.from('pdfs').upload(`uploads/${safeImgName}`, imgFile);
-                    if (imgUpErr) throw imgUpErr;
-                    imageUrl = supabaseClient.storage.from('pdfs').getPublicUrl(`uploads/${safeImgName}`).data.publicUrl;
+                if (img) {
+                    const path = `uploads/img_${Date.now()}_${img.name}`;
+                    await supabaseClient.storage.from('pdf_attachments').upload(path, img);
+                    urls.push(supabaseClient.storage.from('pdf_attachments').getPublicUrl(path).data.publicUrl);
                 }
-                const { error } = await supabaseClient.from('documents').insert([{
-                    sender: currentUser.email, receiver: document.getElementById('receiver').value,
-                    subject: document.getElementById('subject').value, message: message, 
-                    file_url: pdfUrls.join(','), image_url: imageUrl, category: selectedCat, status: 'pending', is_read: false
+
+                await supabaseClient.from('documents').insert([{
+                    sender_email: currentUser.email,
+                    receiver_email: document.getElementById('receiver').value,
+                    category: document.getElementById('docCategory').value,
+                    subject: document.getElementById('subject').value,
+                    message_body: document.getElementById('messageBody').value,
+                    file_url: urls.join(','),
+                    status: 'pending'
                 }]);
-                if (error) throw error;
-                toggleComposeModal(); Swal.fire({ icon: 'success', title: 'ส่งเอกสารเรียบร้อย', timer: 1500, showConfirmButton: false });
-            } catch (err) { Swal.fire('เกิดข้อผิดพลาด', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = 'ส่งเอกสาร'; }
+
+                toggleComposeModal();
+                Swal.fire({ icon: 'success', title: 'ส่งสำเร็จ', timer: 1500 });
+                loadData(currentFilter);
+            } catch (err) { Swal.fire('Error', err.message, 'error'); }
+            finally { btn.disabled = false; btn.innerText = 'ส่งเอกสาร'; }
         };
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('mobile-overlay').classList.toggle('hidden'); }
-        function toggleComposeModal() { const modal = document.getElementById('composeModal'); modal.classList.toggle('active'); if (!modal.classList.contains('active')) { document.getElementById('uploadForm').reset(); clearAttachment('all'); } }
-        function closePreview() { document.getElementById('previewModal').classList.add('hidden'); }
-        function handleFileSelect(input) { const listDisplay = document.getElementById('pdfListDisplay'); listDisplay.innerHTML = ''; const files = Array.from(input.files); if (files.length > 0) { files.forEach(f => listDisplay.innerHTML += `<div class="flex items-center gap-2 bg-white/50 p-2 rounded border border-gray-200 mb-1"><i class="fa-solid fa-file-pdf text-red-500 text-xs"></i><span class="text-[11px] text-gray-700 truncate">${f.name}</span></div>`); document.getElementById('attachmentArea').classList.remove('hidden'); document.getElementById('pdfPreview').classList.remove('hidden'); } }
-        function handleImageSelect(input) { if (input.files[0]) { const reader = new FileReader(); reader.onload = (e) => { document.getElementById('imgPreviewSrc').src = e.target.result; document.getElementById('attachmentArea').classList.remove('hidden'); document.getElementById('imagePreview').classList.remove('hidden'); }; reader.readAsDataURL(input.files[0]); } }
-        function clearAttachment(type) {
-            if (type === 'image' || type === 'all') { document.getElementById('imageInput').value = ''; document.getElementById('imagePreview').classList.add('hidden'); }
-            if (type === 'pdf' || type === 'all') { document.getElementById('fileInput').value = ''; document.getElementById('pdfPreview').classList.add('hidden'); }
-            if (document.getElementById('imagePreview').classList.contains('hidden') && document.getElementById('pdfPreview').classList.contains('hidden')) document.getElementById('attachmentArea').classList.add('hidden');
-        }
-        async function quickDelete(id) { const { isConfirmed } = await Swal.fire({ title: 'ลบเอกสาร?', text: "ไม่สามารถกู้คืนได้", icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก' }); if (isConfirmed) { await supabaseClient.from('documents').delete().eq('id', id); loadData(currentFilter); } }
-        function toggleItemSelect(id, checkbox) { if (checkbox.checked) selectedIds.add(id); else selectedIds.delete(id); updateBulkUI(); }
-        function toggleSelectAll(checkbox) { const checks = document.querySelectorAll('.mail-item input[type="checkbox"]'); selectedIds.clear(); checks.forEach(c => { c.checked = checkbox.checked; if (checkbox.checked) selectedIds.add(parseInt(c.dataset.id)); }); updateBulkUI(); }
-        function updateBulkUI() { const bulk = document.getElementById('bulk-actions'); if (selectedIds.size > 0) bulk.classList.remove('hidden'); else bulk.classList.add('hidden'); }
-        async function bulkDelete() { const { isConfirmed } = await Swal.fire({ title: `ลบ ${selectedIds.size} รายการ?`, icon: 'warning', showCancelButton: true }); if (isConfirmed) { await supabaseClient.from('documents').delete().in('id', Array.from(selectedIds)); loadData(currentFilter); } }
         async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = 'login.html'; }
+        function subscribeToChanges() { supabaseClient.channel('any').on('postgres_changes', {event:'*', schema:'public', table:'documents'}, () => loadData(currentFilter)).subscribe(); }
     </script>
 </body>
 </html>
