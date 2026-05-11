@@ -117,7 +117,7 @@
 </div>
 
 
- <script>
+<script>
     // --- 1. ตั้งค่า Supabase ---
     const SUPABASE_URL = 'https://lsajxgmstpokmxqcjrwd.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_9A3YXqClnAQT62tVSyvMyw_7k22B_DP';
@@ -125,17 +125,17 @@
 
     // --- 2. UI Logic ---
     function toggleComposeModal() {
-        const m = document.getElementById('composeModal');
-        m.classList.toggle('modal-active');
+        document.getElementById('composeModal').classList.toggle('modal-active');
     }
 
     function closePreview() {
-        const modal = document.getElementById('previewModal');
-        modal.classList.add('hidden');
+        document.getElementById('previewModal').classList.add('hidden');
     }
 
     function closeDetail() {
-        document.getElementById('detailModal').classList.add('hidden');
+        const modal = document.getElementById('detailModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
     }
 
     // --- 3. โหลดข้อมูลลงตาราง ---
@@ -157,60 +157,57 @@
 
             let html = '';
             data.forEach(d => {
-              // ใน data.forEach(d => { ... })
-let actionBtn = '';
-let statusClass = '';
-
-if (d.status === 'ส่งมอบสำเร็จ') {
-    statusClass = 'bg-gray-100 text-gray-600';
-    actionBtn = `<span class="text-gray-400 text-xs italic">เสร็จสิ้น</span>`;
-} 
-else if (d.status === 'รับโดย Messenger' || d.status === 'กำลังวนเซ็น') {
-    statusClass = 'bg-orange-100 text-orange-700 text-animate-pulse';
-    // ปุ่มนี้จะพาไปหน้าบันทึกการเซ็นของแต่ละ Step
-    actionBtn = `
-        <button onclick="nextStep('${d.id}', ${d.current_step}, '${d.title}')" 
-                class="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-700 shadow-sm">
-            บันทึกเซ็น (Step ${d.current_step}/7)
-        </button>`;
-} 
-else {
-    // สถานะ "สร้างเอกสาร" หรืออื่นๆ
-    statusClass = 'bg-green-100 text-green-700';
-    actionBtn = `<button onclick="viewQR('${d.id}', '${d.title}')" class="text-blue-500 hover:underline font-bold">เปิด QR</button>`;
-}
+                let actionBtn = '';
+                let statusClass = '';
                 
-                // กำหนดปุ่มและสีตามสถานะ
-                if (d.status === 'รับโดย Messenger') {
-                    statusClass = 'bg-orange-100 text-orange-700';
-                    actionBtn = `<button onclick="finishJob('${d.id}', '${d.title}')" class="bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-700 transition-all">ปิดงาน</button>`;
-                } else if (d.status === 'ส่งมอบสำเร็จ') {
+                if (d.status === 'ส่งมอบสำเร็จ') {
                     statusClass = 'bg-gray-100 text-gray-600';
-                    actionBtn = `<span class="text-gray-400 text-xs italic">เสร็จสิ้น</span>`;
-                } else if (d.status === 'ตีกลับ') {
+                    actionBtn = `<span class="text-gray-400 text-[10px] italic">เสร็จสิ้น</span>`;
+                } 
+                else if (d.status === 'รับโดย Messenger' || d.status === 'กำลังวนเซ็น') {
+                    statusClass = 'bg-orange-100 text-orange-700';
+                    // โชว์ 2 ปุ่ม: จัดการเซ็น (ปุ่มหลัก) และ QR (ปุ่มรอง)
+                    actionBtn = `
+                        <div class="flex flex-col gap-1">
+                            <button onclick="handleNextStep('${d.id}', ${d.current_step}, '${d.title}')" 
+                                    class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-blue-700 shadow-sm transition-all">
+                                จัดการเซ็น (${d.current_step}/7)
+                            </button>
+                            <button onclick="viewQR('${d.id}', '${d.title}')" 
+                                    class="text-blue-500 hover:bg-blue-50 px-2 py-1 rounded text-[9px] border border-blue-200">
+                                <i class="fa-solid fa-qrcode"></i> ดู QR งาน
+                            </button>
+                        </div>`;
+                } 
+                else if (d.status === 'ตีกลับ') {
                     statusClass = 'bg-red-100 text-red-700';
-                    actionBtn = `<button onclick="viewQR('${d.id}', '${d.title}')" class="text-blue-500 hover:underline text-xs">QR ใหม่</button>`;
-                } else {
+                    actionBtn = `<button onclick="viewQR('${d.id}', '${d.title}')" class="text-blue-500 hover:underline text-[10px] font-bold">QR ใหม่</button>`;
+                }
+                else {
+                    // สถานะ "สร้างเอกสาร" (รอสแกนรับครั้งแรก)
                     statusClass = 'bg-green-100 text-green-700';
-                    actionBtn = `<button onclick="viewQR('${d.id}', '${d.title}')" class="text-blue-500 hover:underline">QR</button>`;
+                    actionBtn = `
+                        <button onclick="viewQR('${d.id}', '${d.title}')" 
+                                class="bg-[#006a4e] text-white px-3 py-2 rounded-lg text-[10px] font-bold hover:opacity-90 flex items-center gap-1 shadow-sm">
+                            <i class="fa-solid fa-qrcode"></i> เปิด QR รับงาน
+                        </button>`;
                 }
 
-                // คำนวณ Progress
                 const progressPercent = Math.min(((d.current_step || 1) / 7) * 100, 100);
                 const barColor = d.status === 'ส่งมอบสำเร็จ' ? 'bg-gray-400' : 'bg-[#006a4e]';
 
                 html += `
                     <tr class="border-b hover:bg-gray-50 transition-colors cursor-pointer" onclick="viewDetail('${d.id}')">
-                        <td class="px-6 py-4 font-mono font-bold text-blue-600 text-sm">${d.doc_no || 'DOC-' + d.id.slice(0,4)}</td>
+                        <td class="px-6 py-4 font-mono font-bold text-blue-600 text-xs">${d.doc_no || 'DOC-' + d.id.slice(0,4)}</td>
                         <td class="px-6 py-4">
-                            <div class="font-medium text-gray-800">${d.title}</div>
-                            <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2 max-w-[150px]">
-                                <div class="${barColor} h-1.5 rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+                            <div class="font-medium text-gray-800 text-sm">${d.title}</div>
+                            <div class="w-full bg-gray-200 rounded-full h-1 mt-2 max-w-[120px]">
+                                <div class="${barColor} h-1 rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
                             </div>
-                            <p class="text-[9px] text-gray-500 mt-1 italic">ความคืบหน้า ${d.current_step || 1}/7 ขั้นตอน</p>
+                            <p class="text-[9px] text-gray-500 mt-1 italic">Step ${d.current_step || 1}/7</p>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="px-2 py-1 rounded-full text-[10px] font-bold ${statusClass}">${d.status}</span>
+                            <span class="px-2 py-1 rounded-full text-[9px] font-bold ${statusClass}">${d.status}</span>
                         </td>
                         <td class="px-6 py-4" onclick="event.stopPropagation()">
                             ${actionBtn}
@@ -219,123 +216,121 @@ else {
             });
             tbody.innerHTML = html;
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-red-500">Error: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-red-500 text-xs">Error: ${err.message}</td></tr>`;
         }
     }
 
-   // --- 4. ฟังก์ชันเปิดดูรายละเอียด (Timeline) ---
-async function viewDetail(docId) {
-    const modal = document.getElementById('detailModal');
-    const content = document.getElementById('detailContent');
-    
-    // แสดง Modal โดยใช้ flex (เพื่อให้กึ่งกลางหน้าจอ) และเอา hidden ออก
-    modal.classList.remove('hidden');
-    modal.classList.add('flex'); 
-    
-    content.innerHTML = '<div class="text-center py-10 text-gray-500 text-sm">กำลังดึงข้อมูลไทม์ไลน์...</div>';
-
-    try {
-        const { data: steps, error } = await _supabase
-            .from('document_approvals')
-            .select('*')
-            .eq('document_id', docId)
-            .order('sequence_number', { ascending: true });
-
-        if (error) throw error;
-
-        // ถ้าไม่มีข้อมูลในตาราง approvals
-        if (!steps || steps.length === 0) {
-            content.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">ไม่พบข้อมูลการเดินเอกสาร 7 ขั้นตอน</div>';
-            return;
-        }
-
-        let html = '<div class="relative pl-8 space-y-6">';
-        // เส้นเชื่อม Timeline
-        html += '<div class="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200"></div>';
-
-        steps.forEach((s, idx) => {
-            const isDone = s.status === 'เซ็นแล้ว';
-            const isCurrent = s.status === 'ยังไม่เซ็น' && (idx === 0 || steps[idx-1].status === 'เซ็นแล้ว');
-            const isReject = s.status === 'ตีกลับ';
-            
-            let iconClass = 'bg-gray-200 text-gray-400';
-            let dotIcon = idx + 1;
-
-            if (isDone) { iconClass = 'bg-green-500 text-white'; dotIcon = '✓'; }
-            else if (isCurrent) { iconClass = 'bg-orange-500 text-white animate-pulse shadow-lg shadow-orange-200'; dotIcon = '●'; }
-            else if (isReject) { iconClass = 'bg-red-500 text-white'; dotIcon = '✕'; }
-
-            html += `
-                <div class="relative">
-                    <div class="absolute -left-[29px] w-6 h-6 rounded-full ${iconClass} flex items-center justify-center font-bold text-[10px] z-10 border-2 border-white">
-                        ${dotIcon}
-                    </div>
-                    <div>
-                        <p class="font-bold text-sm ${isCurrent ? 'text-orange-600' : 'text-gray-700'}">${s.approver_name}</p>
-                        <p class="text-[10px] text-gray-400">
-                            สถานะ: ${s.status} ${s.signed_at ? '| ' + new Date(s.signed_at).toLocaleTimeString('th-TH') : ''}
-                        </p>
-                        ${s.remarks ? `<p class="text-[10px] text-red-500 bg-red-50 p-2 mt-1 rounded-lg border border-red-100 italic">เหตุผล: ${s.remarks}</p>` : ''}
-                    </div>
-                </div>`;
+    // --- 4. ฟังก์ชันจัดการขั้นตอนการเซ็น ---
+    async function handleNextStep(docId, currentStep, title) {
+        const { value: action } = await Swal.fire({
+            title: `จัดการขั้นตอนที่ ${currentStep}/7`,
+            text: `เรื่อง: ${title}`,
+            icon: 'question',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonText: '✅ เซ็นแล้ว',
+            denyButtonText: '❌ ตีกลับ (Reject)',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#059669',
+            denyButtonColor: '#d33',
         });
 
-        html += '</div>';
-        content.innerHTML = html;
+        if (action === true) {
+            Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+            await _supabase.from('document_approvals').update({ status: 'เซ็นแล้ว', signed_at: new Date().toISOString() })
+                .eq('document_id', docId).eq('sequence_number', currentStep);
 
-    } catch (err) {
-        content.innerHTML = `<div class="text-red-500 text-xs text-center italic text-balance">เกิดข้อผิดพลาด: ${err.message}</div>`;
+            let nextStep = currentStep + 1;
+            let finalStatus = 'กำลังวนเซ็น';
+            if (currentStep >= 7) { finalStatus = 'ส่งมอบสำเร็จ'; nextStep = 7; }
+
+            const { error } = await _supabase.from('documents').update({ status: finalStatus, current_step: nextStep }).eq('id', docId);
+
+            if (!error) {
+                Swal.fire('สำเร็จ', currentStep >= 7 ? 'จบงานเรียบร้อย!' : `ไปที่ขั้นตอนที่ ${nextStep}`, 'success');
+                loadDocs();
+            }
+        } 
+        else if (action === false) {
+            const { value: reason } = await Swal.fire({
+                title: 'เหตุผลการตีกลับ',
+                input: 'text',
+                inputPlaceholder: 'ระบุเหตุผล...',
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยันตีกลับ',
+                confirmButtonColor: '#d33'
+            });
+
+            if (reason) {
+                Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+                await _supabase.from('document_approvals').update({ status: 'ตีกลับ', remarks: reason })
+                    .eq('document_id', docId).eq('sequence_number', currentStep);
+                await _supabase.from('documents').update({ status: 'ตีกลับ' }).eq('id', docId);
+                
+                Swal.fire('ตีกลับแล้ว', 'ส่งเรื่องกลับไปยังต้นทาง', 'error');
+                loadDocs();
+            }
+        }
     }
-}
 
-// ฟังก์ชันปิดที่สำคัญมาก (ต้องเอา flex ออกด้วย)
-function closeDetail() {
-    const modal = document.getElementById('detailModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-}
+    // --- 5. ระบบไทม์ไลน์ ---
+    async function viewDetail(docId) {
+        const modal = document.getElementById('detailModal');
+        const content = document.getElementById('detailContent');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        content.innerHTML = '<div class="text-center py-10 text-xs text-gray-500">กำลังโหลด...</div>';
 
-    // --- 5. ระบบ QR & Scanner ---
+        try {
+            const { data: steps } = await _supabase.from('document_approvals').select('*').eq('document_id', docId).order('sequence_number', { ascending: true });
+            let html = '<div class="relative pl-8 space-y-6"><div class="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200"></div>';
+            steps.forEach((s, idx) => {
+                const isDone = s.status === 'เซ็นแล้ว';
+                const isReject = s.status === 'ตีกลับ';
+                let iconClass = 'bg-gray-200 text-gray-400';
+                if (isDone) iconClass = 'bg-green-500 text-white';
+                else if (isReject) iconClass = 'bg-red-500 text-white';
+
+                html += `
+                    <div class="relative">
+                        <div class="absolute -left-[29px] w-6 h-6 rounded-full ${iconClass} flex items-center justify-center font-bold text-[10px] z-10 border-2 border-white">
+                            ${isDone ? '✓' : (isReject ? '✕' : idx+1)}
+                        </div>
+                        <div>
+                            <p class="font-bold text-sm text-gray-700">${s.approver_name}</p>
+                            <p class="text-[10px] text-gray-400">${s.status} ${s.signed_at ? '| ' + new Date(s.signed_at).toLocaleTimeString('th-TH') : ''}</p>
+                            ${s.remarks ? `<p class="text-[10px] text-red-500 bg-red-50 p-2 mt-1 rounded italic">เหตุผล: ${s.remarks}</p>` : ''}
+                        </div>
+                    </div>`;
+            });
+            content.innerHTML = html + '</div>';
+        } catch (err) { content.innerHTML = 'Error loading timeline'; }
+    }
+
+    // --- 6. ระบบ QR & Scanner ---
     let html5QrCode;
     async function toggleScanner() {
         const modal = document.getElementById('scannerModal');
         modal.classList.toggle('hidden');
-
         if (!modal.classList.contains('hidden')) {
             html5QrCode = new Html5Qrcode("reader");
-            try {
-                await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
-            } catch (err) {
-                Swal.fire('Error', 'เปิดกล้องไม่ได้: ' + err.message, 'error');
-                toggleScanner();
-            }
-        } else if (html5QrCode) {
-            await html5QrCode.stop();
-        }
+            await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+        } else if (html5QrCode) { await html5QrCode.stop(); }
     }
 
     async function onScanSuccess(decodedText) {
         if (html5QrCode) await html5QrCode.stop();
         toggleScanner();
-        let finalId = decodedText;
-        if (decodedText.includes('id=')) {
-            finalId = new URL(decodedText).searchParams.get('id');
-        }
+        let finalId = decodedText.includes('id=') ? new URL(decodedText).searchParams.get('id') : decodedText;
         updateStatus(finalId);
     }
 
     async function updateStatus(docId) {
-        Swal.fire({ title: 'กำลังสแกนรับงาน...', didOpen: () => Swal.showLoading() });
-        const { data, error } = await _supabase
-            .from('documents')
-            .update({ status: 'รับโดย Messenger' })
-            .eq('id', docId.trim())
-            .select();
-
-        if (error) {
-            Swal.fire('Error', error.message, 'error');
-        } else if (data && data.length > 0) {
-            Swal.fire('สำเร็จ!', `Messenger รับงานเรื่อง "${data[0].title}" เรียบร้อย`, 'success').then(() => {
+        if(!docId) return;
+        Swal.fire({ title: 'กำลังรับงาน...', didOpen: () => Swal.showLoading() });
+        const { data, error } = await _supabase.from('documents').update({ status: 'รับโดย Messenger' }).eq('id', docId.trim()).select();
+        if (!error && data.length > 0) {
+            Swal.fire('สำเร็จ!', 'Messenger รับงานเรียบร้อย', 'success').then(() => {
                 window.history.replaceState({}, document.title, window.location.pathname);
                 loadDocs();
             });
@@ -350,138 +345,35 @@ function closeDetail() {
         new QRCode(qrBox, { text: fullLink, width: 180, height: 180 });
         document.getElementById('prevTitle').innerText = title;
         document.getElementById('previewModal').classList.remove('hidden');
-        document.getElementById('previewModal').classList.add('modal-active');
     }
 
-    // --- 6. บันทึกข้อมูลใหม่ ---
+    // --- 7. บันทึกข้อมูลใหม่ ---
     document.getElementById('docForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btnSubmit');
         btn.disabled = true;
-        btn.innerText = 'กำลังสร้างเอกสาร 7 ขั้นตอน...';
-
         const title = document.getElementById('subject').value;
         const desc = document.getElementById('details').value;
 
         try {
-            const { data: newDoc, error: docErr } = await _supabase
-                .from('documents')
-                .insert([{ title, description: desc, status: 'สร้างเอกสาร', current_step: 1 }])
-                .select();
-
-            if (docErr) throw docErr;
-            const docId = newDoc[0].id;
-
-            const approvers = [
-                { name: 'หัวหน้าแผนกต้นทาง', seq: 1 },
-                { name: 'ผู้ช่วยผู้อำนวยการ', seq: 2 },
-                { name: 'ผู้อำนวยการกอง', seq: 3 },
-                { name: 'หัวหน้าฝ่ายบัญชี', seq: 4 },
-                { name: 'ผู้เชี่ยวชาญตรวจสอบ', seq: 5 },
-                { name: 'รองอธิบดี', seq: 6 },
-                { name: 'อธิบดี (ผู้อนุมัติสุดท้าย)', seq: 7 }
-            ];
-
-            const approvalRows = approvers.map(app => ({
-                document_id: docId,
-                approver_name: app.name,
-                sequence_number: app.seq,
-                status: 'ยังไม่เซ็น'
-            }));
-
-            const { error: appErr } = await _supabase.from('document_approvals').insert(approvalRows);
-            if (appErr) throw appErr;
-
-            Swal.fire('สำเร็จ', 'สร้างเอกสารและลำดับการเซ็นเรียบร้อย', 'success');
+            const { data: newDoc } = await _supabase.from('documents').insert([{ title, description: desc, status: 'สร้างเอกสาร', current_step: 1 }]).select();
+            const approvers = ['หัวหน้าแผนก', 'ผู้ช่วย ผอ.', 'ผอ.กอง', 'ฝ่ายบัญชี', 'ผู้เชี่ยวชาญ', 'รองอธิบดี', 'อธิบดี'];
+            const approvalRows = approvers.map((name, i) => ({ document_id: newDoc[0].id, approver_name: name, sequence_number: i+1, status: 'ยังไม่เซ็น' }));
+            await _supabase.from('document_approvals').insert(approvalRows);
+            
+            Swal.fire('สำเร็จ', 'สร้างงานเดินเอกสารเรียบร้อย', 'success');
             document.getElementById('docForm').reset();
             toggleComposeModal();
             loadDocs();
-        } catch (err) {
-            Swal.fire('Error', err.message, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerText = 'บันทึกข้อมูล';
-        }
+        } catch (err) { Swal.fire('Error', err.message, 'error'); }
+        finally { btn.disabled = false; }
     });
-
-    // --- 7. ฟังก์ชันปิดงาน ---
-    async function finishJob(docId, title) {
-        const { isConfirmed } = await Swal.fire({
-            title: 'ส่งมอบสำเร็จ?',
-            text: `ยืนยันการส่งมอบ "${title}"`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'ยืนยัน',
-            confirmButtonColor: '#006a4e'
-        });
-
-        if (isConfirmed) {
-            const { error } = await _supabase
-                .from('documents')
-                .update({ status: 'ส่งมอบสำเร็จ', current_step: 7 })
-                .eq('id', docId);
-
-            if (!error) {
-                Swal.fire('สำเร็จ', 'งานเสร็จสมบูรณ์', 'success');
-                loadDocs();
-            }
-        }
-    }
 
     window.onload = () => {
         loadDocs(); 
-        const urlParams = new URLSearchParams(window.location.search);
-        const scannedId = urlParams.get('id');
+        const scannedId = new URLSearchParams(window.location.search).get('id');
         if (scannedId) updateStatus(scannedId);
     };
-    async function nextStep(docId, currentStep, title) {
-    const { isConfirmed } = await Swal.fire({
-        title: `ยืนยันการเซ็นคนที่ ${currentStep}?`,
-        text: `คุณกำลังบันทึกการเซ็นของขั้นตอนที่ ${currentStep} สำหรับเรื่อง "${title}"`,
-        icon: 'info',
-        showCancelButton: true,
-        confirmButtonText: 'ยืนยันเซ็นแล้ว',
-        cancelButtonText: 'ตีกลับ (Reject)',
-        confirmButtonColor: '#059669',
-        cancelButtonColor: '#d33'
-    });
-
-    if (isConfirmed) {
-        Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
-
-        // 1. อัปเดตตาราง document_approvals ของคนนั้น
-        await _supabase
-            .from('document_approvals')
-            .update({ status: 'เซ็นแล้ว', signed_at: new Date().toISOString() })
-            .eq('document_id', docId)
-            .eq('sequence_number', currentStep);
-
-        // 2. ขยับ Step ในตารางหลัก
-        let nextStep = currentStep + 1;
-        let finalStatus = 'กำลังวนเซ็น';
-        
-        if (currentStep >= 7) {
-            finalStatus = 'ส่งมอบสำเร็จ';
-            nextStep = 7;
-        }
-
-        const { error } = await _supabase
-            .from('documents')
-            .update({ 
-                current_step: nextStep,
-                status: finalStatus
-            })
-            .eq('id', docId);
-
-        if (!error) {
-            Swal.fire('สำเร็จ!', currentStep === 7 ? 'เอกสารเซ็นครบถ้วนแล้ว' : `ส่งต่อขั้นตอนที่ ${nextStep}`, 'success');
-            loadDocs();
-        }
-    } else {
-        // ถ้ากด Cancel (ในที่นี้เราตั้งเป็นปุ่มตีกลับ)
-        // สามารถเรียกฟังก์ชัน rejectJob(docId, title) ที่ทำไว้ก่อนหน้าได้เลย
-    }
-}
 </script>
 </body>
 </html>
