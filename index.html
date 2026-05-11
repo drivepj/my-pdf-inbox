@@ -11,6 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
@@ -99,8 +100,22 @@
         <div id="reader"></div>
     </div>
 </div>
+<div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden animate__animated animate__fadeInUp">
+        <div class="p-6 border-b flex justify-between items-center bg-gray-50">
+            <h3 class="font-bold text-lg text-gray-800">ติดตามสถานะเอกสาร</h3>
+            <button onclick="closeDetail()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        </div>
+        <div id="detailContent" class="p-6 max-h-[70vh] overflow-y-auto">
+            </div>
+        <div class="p-4 bg-gray-50 border-t text-center">
+            <button onclick="closeDetail()" class="w-full py-3 bg-gray-200 rounded-xl font-bold text-gray-700">ปิดหน้าต่าง</button>
+        </div>
+    </div>
+</div>
 
-    <script>
+
+   <script>
     // --- 1. ตั้งค่า Supabase ---
     const SUPABASE_URL = 'https://lsajxgmstpokmxqcjrwd.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_9A3YXqClnAQT62tVSyvMyw_7k22B_DP';
@@ -118,7 +133,7 @@
         modal.classList.remove('modal-active');
     }
 
-    // --- 3. โหลดข้อมูลลงตาราง ---
+    // --- 3. โหลดข้อมูลลงตาราง (เพิ่มเงื่อนไขปุ่มปิดงาน) ---
     async function loadDocs(filter = 'all') {
         const tbody = document.getElementById('docTableBody');
         tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center">กำลังโหลด...</td></tr>';
@@ -137,13 +152,29 @@
 
             let html = '';
             data.forEach(d => {
+                let actionBtn = '';
+                let statusClass = 'bg-blue-100 text-blue-700'; // ค่าเริ่มต้น
+
+                if (d.status === 'รับโดย Messenger') {
+                    statusClass = 'bg-orange-100 text-orange-700';
+                    // เปลี่ยนจากปุ่ม QR เป็นปุ่มปิดงาน
+                    actionBtn = `<button onclick="finishJob('${d.id}', '${d.title}')" class="bg-green-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-green-700 transition-all">ปิดงาน (Finish)</button>`;
+                } else if (d.status === 'ส่งมอบสำเร็จ') {
+                    statusClass = 'bg-gray-100 text-gray-600';
+                    actionBtn = `<span class="text-gray-400 text-xs italic">เสร็จสิ้น</span>`;
+                } else {
+                    // สถานะ "สร้างเอกสาร"
+                    statusClass = 'bg-green-100 text-green-700';
+                    actionBtn = `<button onclick="viewQR('${d.id}', '${d.title}', '${d.doc_no}')" class="text-blue-500 hover:underline">QR</button>`;
+                }
+
                 html += `
                     <tr class="border-b hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 font-mono font-bold text-blue-600">${d.doc_no || 'Pending'}</td>
                         <td class="px-6 py-4 font-medium">${d.title || 'ไม่มีหัวข้อ'}</td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-[10px] bg-green-100 text-green-700">${d.status}</span></td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-[10px] font-bold ${statusClass}">${d.status}</span></td>
                         <td class="px-6 py-4">
-                            <button onclick="viewQR('${d.id}', '${d.title}', '${d.doc_no}')" class="text-blue-500 hover:underline">QR</button>
+                            ${actionBtn}
                         </td>
                     </tr>`;
             });
@@ -153,7 +184,34 @@
         }
     }
 
-    // --- 4. ระบบ QR & Scanner ---
+    // --- 4. ฟังก์ชันสำหรับ "ปิดงาน" ---
+    async function finishJob(docId, title) {
+        const result = await Swal.fire({
+            title: 'ยืนยันการส่งมอบ?',
+            text: `เอกสาร "${title}" ส่งถึงผู้รับเรียบร้อยแล้วใช่หรือไม่?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยันส่งงาน',
+            confirmButtonColor: '#059669'
+        });
+
+        if (result.isConfirmed) {
+            Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+            const { error } = await _supabase
+                .from('documents')
+                .update({ status: 'ส่งมอบสำเร็จ' })
+                .eq('id', docId);
+
+            if (!error) {
+                Swal.fire('สำเร็จ!', 'ปิดงานเรียบร้อยแล้ว', 'success');
+                loadDocs();
+            } else {
+                Swal.fire('Error', error.message, 'error');
+            }
+        }
+    }
+
+    // --- 5. ระบบ QR & Scanner ---
     let html5QrCode;
     async function toggleScanner() {
         const modal = document.getElementById('scannerModal');
@@ -173,10 +231,8 @@
         }
     }
 
-    // ฟังก์ชันอัปเดตสถานะ (แยกออกมาเพื่อให้เรียกใช้ได้จากหลายที่)
     async function updateStatus(docId) {
         Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
-        
         const { data, error } = await _supabase
             .from('documents')
             .update({ status: 'รับโดย Messenger' })
@@ -187,7 +243,6 @@
             Swal.fire('Error', error.message, 'error');
         } else if (data && data.length > 0) {
             Swal.fire('สำเร็จ!', `รับงาน "${data[0].title}" แล้ว`, 'success').then(() => {
-                // ล้าง URL parameter เพื่อไม่ให้มันเด้งสแกนซ้ำตอน Refresh
                 window.history.replaceState({}, document.title, window.location.pathname);
                 loadDocs();
             });
@@ -199,13 +254,10 @@
     async function onScanSuccess(decodedText) {
         if (html5QrCode) await html5QrCode.stop();
         toggleScanner();
-        
-        // ถ้าเป็น Link ให้ตัดเอาเฉพาะ ID หลัง ?id=
         let finalId = decodedText;
         if (decodedText.includes('id=')) {
             finalId = new URL(decodedText).searchParams.get('id');
         }
-        
         updateStatus(finalId);
     }
 
@@ -213,62 +265,211 @@
         const qrBox = document.getElementById('qrcode-container');
         qrBox.innerHTML = '';
         const currentUrl = window.location.href.split('?')[0]; 
-        const fullLink = `${currentUrl}?id=${id}`; // สร้าง Link ให้แอปกล้องสแกนได้
+        const fullLink = `${currentUrl}?id=${id}`;
         new QRCode(qrBox, { text: fullLink, width: 180, height: 180 });
         document.getElementById('previewModal').classList.remove('hidden');
         document.getElementById('previewModal').classList.add('modal-active');
     }
 
-    // --- 5. บันทึกข้อมูลใหม่ ---
-    document.getElementById('docForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btnSubmit');
-        btn.disabled = true;
-        btn.innerText = 'กำลังประมวลผล...';
+    // --- 6. บันทึกข้อมูลใหม่ ---
+   document.getElementById('docForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerText = 'กำลังสร้างเอกสารและลำดับการเซ็น...';
 
-        const title = document.getElementById('subject').value;
-        const desc = document.getElementById('details').value;
-        const file = document.getElementById('pdfFile').files[0];
+    const title = document.getElementById('subject').value;
+    const desc = document.getElementById('details').value;
 
-        let fileUrl = '';
-        if (file) {
-            const fileName = `${Date.now()}_${file.name}`;
-            const { data: upData, error: upErr } = await _supabase.storage.from('document_files').upload(fileName, file);
-            if (!upErr) {
-                fileUrl = _supabase.storage.from('document_files').getPublicUrl(fileName).data.publicUrl;
-            }
-        }
-
-        const { error } = await _supabase.from('documents').insert([{
+    // 1. สร้างเอกสารหลักก่อน
+    const { data: newDoc, error: docErr } = await _supabase
+        .from('documents')
+        .insert([{
             title: title,
             description: desc,
-            file_url: fileUrl,
-            status: 'สร้างเอกสาร'
-        }]);
+            status: 'สร้างเอกสาร',
+            current_step: 1 // เริ่มที่คนที่ 1
+        }])
+        .select(); // ดึง ID ที่เพิ่งสร้างออกมา
 
-        if (!error) {
-            Swal.fire('สำเร็จ', 'บันทึกเรียบร้อย', 'success');
-            document.getElementById('docForm').reset();
-            toggleComposeModal();
-            loadDocs();
-        } else {
-            Swal.fire('Error', error.message, 'error');
-        }
+    if (docErr) {
+        Swal.fire('Error', docErr.message, 'error');
         btn.disabled = false;
-        btn.innerText = 'บันทึกข้อมูล';
-    });
+        return;
+    }
 
-    // --- 6. เริ่มการทำงาน (Startup) ---
+    const docId = newDoc[0].id;
+
+    // 2. กำหนดรายชื่อผู้ลงนาม 7 คน (แก้ไขชื่อตรงนี้ได้เลย)
+    const approvers = [
+        { name: 'หัวหน้าแผนกต้นทาง', seq: 1 },
+        { name: 'ผู้ช่วยผู้อำนวยการ', seq: 2 },
+        { name: 'ผู้อำนวยการกอง', seq: 3 },
+        { name: 'หัวหน้าฝ่ายบัญชี', seq: 4 },
+        { name: 'ผู้เชี่ยวชาญตรวจสอบ', seq: 5 },
+        { name: 'รองอธิบดี', seq: 6 },
+        { name: 'อธิบดี (ผู้อนุมัติสุดท้าย)', seq: 7 }
+    ];
+
+    // 3. ใส่รายชื่อทั้ง 7 คนลงในตาราง approvals
+    const approvalRows = approvers.map(app => ({
+        document_id: docId,
+        approver_name: app.name,
+        sequence_number: app.seq,
+        status: 'ยังไม่เซ็น'
+    }));
+
+    const { error: appErr } = await _supabase
+        .from('document_approvals')
+        .insert(approvalRows);
+
+    if (!appErr) {
+        Swal.fire('สำเร็จ', 'สร้างเอกสารและกำหนดเส้นทางเซ็น 7 ขั้นตอนเรียบร้อย', 'success');
+        document.getElementById('docForm').reset();
+        toggleComposeModal();
+        loadDocs();
+    } else {
+        Swal.fire('Error', 'สร้างรายชื่อคนเซ็นไม่สำเร็จ: ' + appErr.message, 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerText = 'บันทึกข้อมูล';
+});
+
+    // --- 7. เริ่มการทำงาน ---
     window.onload = async () => {
         loadDocs(); 
-        
-        // เช็คว่า Messenger สแกนผ่านกล้องมาไหม (?id=xxx)
         const urlParams = new URLSearchParams(window.location.search);
         const scannedId = urlParams.get('id');
         if (scannedId) {
             updateStatus(scannedId);
         }
     };
+    async function rejectJob(docId, title) {
+    const { value: reason } = await Swal.fire({
+        title: 'ระบุเหตุผลการตีกลับ',
+        input: 'text',
+        inputPlaceholder: 'เช่น เอกสารไม่ครบ, เซ็นผิดจุด...',
+        showCancelButton: true,
+        confirmButtonColor: '#d33'
+    });
+
+    if (reason) {
+        const { error } = await _supabase
+            .from('documents')
+            .update({ 
+                status: 'ตีกลับ',
+                description: `เหตุผลการตีกลับ: ${reason}` // บันทึกเหตุผลทับในคำอธิบาย
+            })
+            .eq('id', docId);
+
+        if (!error) {
+            Swal.fire('บันทึกแล้ว', 'สถานะเปลี่ยนเป็นตีกลับเรียบร้อย', 'info');
+            loadDocs();
+        }
+    }
+}
+// ฟังก์ชันสำหรับสร้าง HTML ของ Dashboard 7 ขั้นตอน
+function renderProgress(steps) {
+    // steps คือ array ของคนเซ็น 7 คนที่ดึงมาจากตาราง document_approvals
+    let html = '<div class="flex items-center justify-between w-full mb-8">';
+    
+    steps.forEach((step, index) => {
+        const isActive = step.status === 'เซ็นแล้ว';
+        const isCurrent = !isActive && (index === 0 || steps[index-1].status === 'เซ็นแล้ว');
+        
+        html += `
+            <div class="flex flex-col items-center flex-1">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold 
+                    ${isActive ? 'bg-green-500 text-white' : (isCurrent ? 'bg-orange-500 text-white animate-pulse' : 'bg-gray-200 text-gray-500')}">
+                    ${step.status === 'ตีกลับ' ? '❌' : index + 1}
+                </div>
+                <div class="text-[10px] mt-1 text-center font-medium">${step.approver_name}</div>
+            </div>
+            ${index < steps.length - 1 ? '<div class="h-[2px] flex-1 bg-gray-200"></div>' : ''}
+        `;
+    });
+    
+    html += '</div>';
+    return html;
+}
+// ปรับในส่วนวนลูป data.forEach(d => { ... }) ใน loadDocs
+const progressPercent = Math.min((d.current_step / 7) * 100, 100); 
+
+html += `
+    <tr class="border-b hover:bg-gray-50 transition-colors cursor-pointer" onclick="viewDetail('${d.id}')">
+        <td class="px-6 py-4 font-mono font-bold text-blue-600">${d.doc_no || 'Pending'}</td>
+        <td class="px-6 py-4">
+            <div class="font-medium">${d.title}</div>
+            <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${progressPercent}%"></div>
+            </div>
+            <p class="text-[9px] text-gray-500 mt-1">คืบหน้า ${d.current_step}/7 ขั้นตอน</p>
+        </td>
+        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-[10px] font-bold ${statusClass}">${d.status}</span></td>
+        <td class="px-6 py-4" onclick="event.stopPropagation()">${actionBtn}</td>
+    </tr>`;
+    
+    // ฟังก์ชันเปิดดูรายละเอียด
+async function viewDetail(docId) {
+    const modal = document.getElementById('detailModal');
+    const content = document.getElementById('detailContent');
+    modal.classList.remove('hidden');
+    content.innerHTML = '<div class="text-center py-10">กำลังโหลดความคืบหน้า...</div>';
+
+    try {
+        // ดึงข้อมูลการอนุมัติทั้ง 7 ขั้นตอน
+        const { data: steps, error } = await _supabase
+            .from('document_approvals')
+            .select('*')
+            .eq('document_id', docId)
+            .order('sequence_number', { ascending: true });
+
+        if (error) throw error;
+
+        let html = '<div class="space-y-0 relative">';
+        // เส้นประด้านหลัง
+        html += '<div class="absolute left-4 top-2 bottom-2 w-0.5 bg-gray-200 z-0"></div>';
+
+        steps.forEach((s, idx) => {
+            const isDone = s.status === 'เซ็นแล้ว';
+            const isCurrent = s.status === 'ยังไม่เซ็น' && (idx === 0 || steps[idx-1].status === 'เซ็นแล้ว');
+            const isReject = s.status === 'ตีกลับ';
+            
+            // กำหนดสีและไอคอน
+            let iconClass = 'bg-gray-200 text-white';
+            let icon = idx + 1;
+            if (isDone) { iconClass = 'bg-green-500 text-white'; icon = '✓'; }
+            if (isCurrent) { iconClass = 'bg-orange-500 text-white shadow-lg shadow-orange-200 animate-pulse'; icon = '●'; }
+            if (isReject) { iconClass = 'bg-red-500 text-white'; icon = '✕'; }
+
+            html += `
+                <div class="relative z-10 flex items-start mb-8 last:mb-0">
+                    <div class="w-8 h-8 rounded-full ${iconClass} flex items-center justify-center font-bold text-sm flex-shrink-0 transition-all duration-500">
+                        ${icon}
+                    </div>
+                    <div class="ml-4 pt-0.5">
+                        <p class="font-bold ${isCurrent ? 'text-orange-600' : 'text-gray-700'}">${s.approver_name}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            สถานะ: <span class="font-medium">${s.status}</span>
+                            ${s.signed_at ? ` | เมื่อ: ${new Date(s.signed_at).toLocaleString('th-TH')}` : ''}
+                        </p>
+                        ${s.remarks ? `<p class="text-xs text-red-500 mt-1 italic border-l-2 border-red-200 pl-2">เหตุผล: ${s.remarks}</p>` : ''}
+                    </div>
+                </div>`;
+        });
+
+        html += '</div>';
+        content.innerHTML = html;
+
+    } catch (err) {
+        content.innerHTML = `<div class="text-red-500 text-center">เกิดข้อผิดพลาด: ${err.message}</div>`;
+    }
+}
+
+function closeDetail() {
+    document.getElementById('detailModal').classList.add('hidden');
+}
 </script>
 </body>
 </html>
