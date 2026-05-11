@@ -101,34 +101,46 @@
 </div>
 
     <script>
-        // --- ส่วนตั้งค่า Supabase ---
-        const SUPABASE_URL = 'https://lsajxgmstpokmxqcjrwd.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_9A3YXqClnAQT62tVSyvMyw_7k22B_DP';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // --- 1. ตั้งค่า Supabase ---
+    const SUPABASE_URL = 'https://lsajxgmstpokmxqcjrwd.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_9A3YXqClnAQT62tVSyvMyw_7k22B_DP';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- UI Logic ---
-        function toggleComposeModal() {
-            const m = document.getElementById('composeModal');
-            m.classList.toggle('modal-active');
-        }
+    // --- 2. UI Logic ---
+    function toggleComposeModal() {
+        const m = document.getElementById('composeModal');
+        m.classList.toggle('modal-active');
+    }
 
-        // --- โหลดข้อมูล ---
-        async function loadDocs(filter = 'all') {
-            const tbody = document.getElementById('docTableBody');
-            tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center">กำลังโหลด...</td></tr>';
+    function closePreview() {
+        const modal = document.getElementById('previewModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('modal-active');
+    }
 
+    // --- 3. โหลดข้อมูลลงตาราง ---
+    async function loadDocs(filter = 'all') {
+        const tbody = document.getElementById('docTableBody');
+        tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center">กำลังโหลด...</td></tr>';
+
+        try {
             let query = _supabase.from('documents').select('*').order('created_at', { ascending: false });
             if (filter !== 'all') query = query.eq('status', filter);
 
             const { data, error } = await query;
-            if (error) return console.error(error);
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-gray-400">ไม่พบข้อมูลเอกสาร</td></tr>';
+                return;
+            }
 
             let html = '';
             data.forEach(d => {
                 html += `
                     <tr class="border-b hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 font-mono font-bold text-blue-600">${d.doc_no || 'Pending'}</td>
-                        <td class="px-6 py-4 font-medium">${d.title}</td>
+                        <td class="px-6 py-4 font-medium">${d.title || 'ไม่มีหัวข้อ'}</td>
                         <td class="px-6 py-4"><span class="px-2 py-1 rounded text-[10px] bg-green-100 text-green-700">${d.status}</span></td>
                         <td class="px-6 py-4">
                             <button onclick="viewQR('${d.id}', '${d.title}', '${d.doc_no}')" class="text-blue-500 hover:underline">QR</button>
@@ -136,125 +148,127 @@
                     </tr>`;
             });
             tbody.innerHTML = html;
-        }
-        // ฟังก์ชันปิดหน้าต่าง Preview
-function closePreview() {
-    const modal = document.getElementById('previewModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('modal-active');
-}
-
-// ฟังก์ชันเปิด/ปิด กล้องสแกน
-let html5QrCode;
-async function toggleScanner() {
-    const modal = document.getElementById('scannerModal');
-    modal.classList.toggle('hidden');
-    modal.classList.toggle('modal-active');
-
-    if (!modal.classList.contains('hidden')) {
-        html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-        
-        try {
-            await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
         } catch (err) {
-            Swal.fire('กล้องผิดพลาด', 'ไม่สามารถเปิดกล้องได้', 'error');
-            toggleScanner();
+            tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-red-500">Error: ${err.message}</td></tr>`;
         }
-    } else {
-        if (html5QrCode) await html5QrCode.stop();
     }
-}
 
-// เมื่อสแกนติด
-async function onScanSuccess(decodedText) {
-    // 1. หยุดกล้องและปิด Modal สแกนทันที
-    if (html5QrCode) await html5QrCode.stop();
-    toggleScanner();
+    // --- 4. ระบบ QR & Scanner ---
+    let html5QrCode;
+    async function toggleScanner() {
+        const modal = document.getElementById('scannerModal');
+        modal.classList.toggle('hidden');
+        modal.classList.toggle('modal-active');
 
-    // 2. ล้างค่า ID ที่สแกนได้ (ตัดช่องว่าง)
-    const docId = decodedText.trim();
-
-    Swal.fire({
-        title: 'ยืนยันรับเอกสาร?',
-        text: `รหัสเอกสาร: ${docId}`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'ยืนยันรับงาน',
-        confirmButtonColor: '#006a4e'
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            // 3. ส่งคำสั่งอัปเดตไปที่ Supabase
-            const { data, error, count } = await _supabase
-                .from('documents')
-                .update({ status: 'รับโดย Messenger' })
-                .eq('id', docId)
-                .select(); // ใช้ select เพื่อดูว่ามีแถวไหนถูกอัปเดตจริงไหม
-
-            if (!error && data.length > 0) {
-                Swal.fire('สำเร็จ', 'อัปเดตสถานะเป็น "รับโดย Messenger" แล้ว', 'success');
-                loadDocs(); // รีโหลดตาราง
-            } else {
-                console.error("Update Error:", error);
-                Swal.fire('ล้มเหลว', 'ไม่พบข้อมูลเอกสารนี้ในระบบ หรือสิทธิ์การแก้ไขถูกบล็อก', 'error');
+        if (!modal.classList.contains('hidden')) {
+            html5QrCode = new Html5Qrcode("reader");
+            try {
+                await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+            } catch (err) {
+                Swal.fire('Error', 'เปิดกล้องไม่ได้: ' + err.message, 'error');
+                toggleScanner();
             }
+        } else if (html5QrCode) {
+            await html5QrCode.stop();
         }
-    });
-}
+    }
 
-        // --- แสดง QR Code ---
-        function viewQR(id, title, docNo) {
-            document.getElementById('prevTitle').innerText = title;
-            document.getElementById('prevNo').innerText = docNo;
-            const qrBox = document.getElementById('qrcode-container');
-            qrBox.innerHTML = '';
-            new QRCode(qrBox, { text: id, width: 180, height: 180 });
-            document.getElementById('previewModal').classList.remove('hidden');
-            document.getElementById('previewModal').classList.add('modal-active');
-        }
+    // ฟังก์ชันอัปเดตสถานะ (แยกออกมาเพื่อให้เรียกใช้ได้จากหลายที่)
+    async function updateStatus(docId) {
+        Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+        
+        const { data, error } = await _supabase
+            .from('documents')
+            .update({ status: 'รับโดย Messenger' })
+            .eq('id', docId.trim())
+            .select();
 
-        // --- บันทึกข้อมูล ---
-        document.getElementById('docForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btnSubmit');
-            btn.disabled = true;
-            btn.innerText = 'กำลังประมวลผล...';
-
-            const title = document.getElementById('subject').value;
-            const desc = document.getElementById('details').value;
-            const file = document.getElementById('pdfFile').files[0];
-
-            let fileUrl = '';
-            if (file) {
-                const fileName = `${Date.now()}_${file.name}`;
-                const { data: upData, error: upErr } = await _supabase.storage.from('document_files').upload(fileName, file);
-                if (!upErr) {
-                    const { data } = _supabase.storage.from('document_files').getPublicUrl(fileName);
-                    fileUrl = data.publicUrl;
-                }
-            }
-
-            const { error } = await _supabase.from('documents').insert([{
-                title: title,
-                description: desc,
-                file_url: fileUrl,
-                status: 'สร้างเอกสาร'
-            }]);
-
-            if (!error) {
-                Swal.fire('สำเร็จ', 'บันทึกเรียบร้อย', 'success');
-                toggleComposeModal();
+        if (error) {
+            Swal.fire('Error', error.message, 'error');
+        } else if (data && data.length > 0) {
+            Swal.fire('สำเร็จ!', `รับงาน "${data[0].title}" แล้ว`, 'success').then(() => {
+                // ล้าง URL parameter เพื่อไม่ให้มันเด้งสแกนซ้ำตอน Refresh
+                window.history.replaceState({}, document.title, window.location.pathname);
                 loadDocs();
-            } else {
-                Swal.fire('Error', error.message, 'error');
+            });
+        } else {
+            Swal.fire('ไม่พบข้อมูล', 'รหัสเอกสารไม่ถูกต้อง', 'warning');
+        }
+    }
+
+    async function onScanSuccess(decodedText) {
+        if (html5QrCode) await html5QrCode.stop();
+        toggleScanner();
+        
+        // ถ้าเป็น Link ให้ตัดเอาเฉพาะ ID หลัง ?id=
+        let finalId = decodedText;
+        if (decodedText.includes('id=')) {
+            finalId = new URL(decodedText).searchParams.get('id');
+        }
+        
+        updateStatus(finalId);
+    }
+
+    function viewQR(id, title, docNo) {
+        const qrBox = document.getElementById('qrcode-container');
+        qrBox.innerHTML = '';
+        const currentUrl = window.location.href.split('?')[0]; 
+        const fullLink = `${currentUrl}?id=${id}`; // สร้าง Link ให้แอปกล้องสแกนได้
+        new QRCode(qrBox, { text: fullLink, width: 180, height: 180 });
+        document.getElementById('previewModal').classList.remove('hidden');
+        document.getElementById('previewModal').classList.add('modal-active');
+    }
+
+    // --- 5. บันทึกข้อมูลใหม่ ---
+    document.getElementById('docForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmit');
+        btn.disabled = true;
+        btn.innerText = 'กำลังประมวลผล...';
+
+        const title = document.getElementById('subject').value;
+        const desc = document.getElementById('details').value;
+        const file = document.getElementById('pdfFile').files[0];
+
+        let fileUrl = '';
+        if (file) {
+            const fileName = `${Date.now()}_${file.name}`;
+            const { data: upData, error: upErr } = await _supabase.storage.from('document_files').upload(fileName, file);
+            if (!upErr) {
+                fileUrl = _supabase.storage.from('document_files').getPublicUrl(fileName).data.publicUrl;
             }
+        }
 
-            btn.disabled = false;
-            btn.innerText = 'บันทึกข้อมูล';
-        });
+        const { error } = await _supabase.from('documents').insert([{
+            title: title,
+            description: desc,
+            file_url: fileUrl,
+            status: 'สร้างเอกสาร'
+        }]);
 
-        // เริ่มโหลดข้อมูล
-        window.onload = () => { loadDocs(); };
-    </script>
+        if (!error) {
+            Swal.fire('สำเร็จ', 'บันทึกเรียบร้อย', 'success');
+            document.getElementById('docForm').reset();
+            toggleComposeModal();
+            loadDocs();
+        } else {
+            Swal.fire('Error', error.message, 'error');
+        }
+        btn.disabled = false;
+        btn.innerText = 'บันทึกข้อมูล';
+    });
+
+    // --- 6. เริ่มการทำงาน (Startup) ---
+    window.onload = async () => {
+        loadDocs(); 
+        
+        // เช็คว่า Messenger สแกนผ่านกล้องมาไหม (?id=xxx)
+        const urlParams = new URLSearchParams(window.location.search);
+        const scannedId = urlParams.get('id');
+        if (scannedId) {
+            updateStatus(scannedId);
+        }
+    };
+</script>
 </body>
 </html>
