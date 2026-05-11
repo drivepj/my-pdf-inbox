@@ -100,16 +100,18 @@
         <div id="reader"></div>
     </div>
 </div>
-<div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden animate__animated animate__fadeInUp">
+<div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-[999] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
         <div class="p-6 border-b flex justify-between items-center bg-gray-50">
             <h3 class="font-bold text-lg text-gray-800">ติดตามสถานะเอกสาร</h3>
-            <button onclick="closeDetail()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            <button onclick="closeDetail()" class="text-gray-400 hover:text-gray-600 text-3xl line-height-0">&times;</button>
         </div>
         <div id="detailContent" class="p-6 max-h-[70vh] overflow-y-auto">
             </div>
-        <div class="p-4 bg-gray-50 border-t text-center">
-            <button onclick="closeDetail()" class="w-full py-3 bg-gray-200 rounded-xl font-bold text-gray-700">ปิดหน้าต่าง</button>
+        <div class="p-4 bg-gray-50 border-t">
+            <button onclick="closeDetail()" class="w-full py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-bold text-gray-700 transition-colors">
+                ปิดหน้าต่าง
+            </button>
         </div>
     </div>
 </div>
@@ -155,8 +157,28 @@
 
             let html = '';
             data.forEach(d => {
-                let actionBtn = '';
-                let statusClass = 'bg-blue-100 text-blue-700';
+              // ใน data.forEach(d => { ... })
+let actionBtn = '';
+let statusClass = '';
+
+if (d.status === 'ส่งมอบสำเร็จ') {
+    statusClass = 'bg-gray-100 text-gray-600';
+    actionBtn = `<span class="text-gray-400 text-xs italic">เสร็จสิ้น</span>`;
+} 
+else if (d.status === 'รับโดย Messenger' || d.status === 'กำลังวนเซ็น') {
+    statusClass = 'bg-orange-100 text-orange-700 text-animate-pulse';
+    // ปุ่มนี้จะพาไปหน้าบันทึกการเซ็นของแต่ละ Step
+    actionBtn = `
+        <button onclick="nextStep('${d.id}', ${d.current_step}, '${d.title}')" 
+                class="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-700 shadow-sm">
+            บันทึกเซ็น (Step ${d.current_step}/7)
+        </button>`;
+} 
+else {
+    // สถานะ "สร้างเอกสาร" หรืออื่นๆ
+    statusClass = 'bg-green-100 text-green-700';
+    actionBtn = `<button onclick="viewQR('${d.id}', '${d.title}')" class="text-blue-500 hover:underline font-bold">เปิด QR</button>`;
+}
                 
                 // กำหนดปุ่มและสีตามสถานะ
                 if (d.status === 'รับโดย Messenger') {
@@ -201,56 +223,77 @@
         }
     }
 
-    // --- 4. ฟังก์ชันเปิดดูรายละเอียด (Timeline) ---
-    async function viewDetail(docId) {
-        const modal = document.getElementById('detailModal');
-        const content = document.getElementById('detailContent');
-        modal.classList.remove('hidden');
-        modal.classList.add('modal-active');
-        content.innerHTML = '<div class="text-center py-10 text-gray-500 text-sm">กำลังดึงข้อมูลไทม์ไลน์...</div>';
+   // --- 4. ฟังก์ชันเปิดดูรายละเอียด (Timeline) ---
+async function viewDetail(docId) {
+    const modal = document.getElementById('detailModal');
+    const content = document.getElementById('detailContent');
+    
+    // แสดง Modal โดยใช้ flex (เพื่อให้กึ่งกลางหน้าจอ) และเอา hidden ออก
+    modal.classList.remove('hidden');
+    modal.classList.add('flex'); 
+    
+    content.innerHTML = '<div class="text-center py-10 text-gray-500 text-sm">กำลังดึงข้อมูลไทม์ไลน์...</div>';
 
-        try {
-            const { data: steps, error } = await _supabase
-                .from('document_approvals')
-                .select('*')
-                .eq('document_id', docId)
-                .order('sequence_number', { ascending: true });
+    try {
+        const { data: steps, error } = await _supabase
+            .from('document_approvals')
+            .select('*')
+            .eq('document_id', docId)
+            .order('sequence_number', { ascending: true });
 
-            if (error) throw error;
+        if (error) throw error;
 
-            let html = '<div class="relative pl-8 space-y-6">';
-            html += '<div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-200"></div>';
-
-            steps.forEach((s, idx) => {
-                const isDone = s.status === 'เซ็นแล้ว';
-                const isCurrent = s.status === 'ยังไม่เซ็น' && (idx === 0 || steps[idx-1].status === 'เซ็นแล้ว');
-                const isReject = s.status === 'ตีกลับ';
-                
-                let iconClass = 'bg-gray-200 text-gray-400';
-                let dotIcon = idx + 1;
-
-                if (isDone) { iconClass = 'bg-green-500 text-white'; dotIcon = '✓'; }
-                else if (isCurrent) { iconClass = 'bg-orange-500 text-white animate-pulse shadow-lg shadow-orange-200'; dotIcon = '●'; }
-                else if (isReject) { iconClass = 'bg-red-500 text-white'; dotIcon = '✕'; }
-
-                html += `
-                    <div class="relative">
-                        <div class="absolute -left-[25px] w-6 h-6 rounded-full ${iconClass} flex items-center justify-center font-bold text-[10px] z-10 border-2 border-white">
-                            ${dotIcon}
-                        </div>
-                        <div>
-                            <p class="font-bold text-sm ${isCurrent ? 'text-orange-600' : 'text-gray-700'}">${s.approver_name}</p>
-                            <p class="text-[10px] text-gray-400">สถานะ: ${s.status} ${s.signed_at ? '| ' + new Date(s.signed_at).toLocaleTimeString('th-TH') : ''}</p>
-                            ${s.remarks ? `<p class="text-[10px] text-red-500 bg-red-50 p-1 mt-1 rounded italic">หมายเหตุ: ${s.remarks}</p>` : ''}
-                        </div>
-                    </div>`;
-            });
-            html += '</div>';
-            content.innerHTML = html;
-        } catch (err) {
-            content.innerHTML = `<div class="text-red-500 text-xs text-center italic">ไม่พบรายละเอียดขั้นตอน: ${err.message}</div>`;
+        // ถ้าไม่มีข้อมูลในตาราง approvals
+        if (!steps || steps.length === 0) {
+            content.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">ไม่พบข้อมูลการเดินเอกสาร 7 ขั้นตอน</div>';
+            return;
         }
+
+        let html = '<div class="relative pl-8 space-y-6">';
+        // เส้นเชื่อม Timeline
+        html += '<div class="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200"></div>';
+
+        steps.forEach((s, idx) => {
+            const isDone = s.status === 'เซ็นแล้ว';
+            const isCurrent = s.status === 'ยังไม่เซ็น' && (idx === 0 || steps[idx-1].status === 'เซ็นแล้ว');
+            const isReject = s.status === 'ตีกลับ';
+            
+            let iconClass = 'bg-gray-200 text-gray-400';
+            let dotIcon = idx + 1;
+
+            if (isDone) { iconClass = 'bg-green-500 text-white'; dotIcon = '✓'; }
+            else if (isCurrent) { iconClass = 'bg-orange-500 text-white animate-pulse shadow-lg shadow-orange-200'; dotIcon = '●'; }
+            else if (isReject) { iconClass = 'bg-red-500 text-white'; dotIcon = '✕'; }
+
+            html += `
+                <div class="relative">
+                    <div class="absolute -left-[29px] w-6 h-6 rounded-full ${iconClass} flex items-center justify-center font-bold text-[10px] z-10 border-2 border-white">
+                        ${dotIcon}
+                    </div>
+                    <div>
+                        <p class="font-bold text-sm ${isCurrent ? 'text-orange-600' : 'text-gray-700'}">${s.approver_name}</p>
+                        <p class="text-[10px] text-gray-400">
+                            สถานะ: ${s.status} ${s.signed_at ? '| ' + new Date(s.signed_at).toLocaleTimeString('th-TH') : ''}
+                        </p>
+                        ${s.remarks ? `<p class="text-[10px] text-red-500 bg-red-50 p-2 mt-1 rounded-lg border border-red-100 italic">เหตุผล: ${s.remarks}</p>` : ''}
+                    </div>
+                </div>`;
+        });
+
+        html += '</div>';
+        content.innerHTML = html;
+
+    } catch (err) {
+        content.innerHTML = `<div class="text-red-500 text-xs text-center italic text-balance">เกิดข้อผิดพลาด: ${err.message}</div>`;
     }
+}
+
+// ฟังก์ชันปิดที่สำคัญมาก (ต้องเอา flex ออกด้วย)
+function closeDetail() {
+    const modal = document.getElementById('detailModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
 
     // --- 5. ระบบ QR & Scanner ---
     let html5QrCode;
@@ -391,6 +434,54 @@
         const scannedId = urlParams.get('id');
         if (scannedId) updateStatus(scannedId);
     };
+    async function nextStep(docId, currentStep, title) {
+    const { isConfirmed } = await Swal.fire({
+        title: `ยืนยันการเซ็นคนที่ ${currentStep}?`,
+        text: `คุณกำลังบันทึกการเซ็นของขั้นตอนที่ ${currentStep} สำหรับเรื่อง "${title}"`,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยันเซ็นแล้ว',
+        cancelButtonText: 'ตีกลับ (Reject)',
+        confirmButtonColor: '#059669',
+        cancelButtonColor: '#d33'
+    });
+
+    if (isConfirmed) {
+        Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+
+        // 1. อัปเดตตาราง document_approvals ของคนนั้น
+        await _supabase
+            .from('document_approvals')
+            .update({ status: 'เซ็นแล้ว', signed_at: new Date().toISOString() })
+            .eq('document_id', docId)
+            .eq('sequence_number', currentStep);
+
+        // 2. ขยับ Step ในตารางหลัก
+        let nextStep = currentStep + 1;
+        let finalStatus = 'กำลังวนเซ็น';
+        
+        if (currentStep >= 7) {
+            finalStatus = 'ส่งมอบสำเร็จ';
+            nextStep = 7;
+        }
+
+        const { error } = await _supabase
+            .from('documents')
+            .update({ 
+                current_step: nextStep,
+                status: finalStatus
+            })
+            .eq('id', docId);
+
+        if (!error) {
+            Swal.fire('สำเร็จ!', currentStep === 7 ? 'เอกสารเซ็นครบถ้วนแล้ว' : `ส่งต่อขั้นตอนที่ ${nextStep}`, 'success');
+            loadDocs();
+        }
+    } else {
+        // ถ้ากด Cancel (ในที่นี้เราตั้งเป็นปุ่มตีกลับ)
+        // สามารถเรียกฟังก์ชัน rejectJob(docId, title) ที่ทำไว้ก่อนหน้าได้เลย
+    }
+}
 </script>
 </body>
 </html>
