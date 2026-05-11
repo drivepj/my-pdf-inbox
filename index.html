@@ -168,28 +168,35 @@ async function toggleScanner() {
 
 // เมื่อสแกนติด
 async function onScanSuccess(decodedText) {
-    await html5QrCode.stop();
+    // 1. หยุดกล้องและปิด Modal สแกนทันที
+    if (html5QrCode) await html5QrCode.stop();
     toggleScanner();
+
+    // 2. ล้างค่า ID ที่สแกนได้ (ตัดช่องว่าง)
+    const docId = decodedText.trim();
 
     Swal.fire({
         title: 'ยืนยันรับเอกสาร?',
-        text: `ต้องการรับงานรหัส: ${decodedText}`,
+        text: `รหัสเอกสาร: ${docId}`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'ยืนยันรับงาน',
         confirmButtonColor: '#006a4e'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            const { error } = await _supabase
+            // 3. ส่งคำสั่งอัปเดตไปที่ Supabase
+            const { data, error, count } = await _supabase
                 .from('documents')
                 .update({ status: 'รับโดย Messenger' })
-                .eq('id', decodedText);
+                .eq('id', docId)
+                .select(); // ใช้ select เพื่อดูว่ามีแถวไหนถูกอัปเดตจริงไหม
 
-            if (!error) {
-                Swal.fire('สำเร็จ', 'อัปเดตสถานะเรียบร้อย', 'success');
-                loadDocs();
+            if (!error && data.length > 0) {
+                Swal.fire('สำเร็จ', 'อัปเดตสถานะเป็น "รับโดย Messenger" แล้ว', 'success');
+                loadDocs(); // รีโหลดตาราง
             } else {
-                Swal.fire('ล้มเหลว', 'ไม่พบข้อมูลเอกสารนี้', 'error');
+                console.error("Update Error:", error);
+                Swal.fire('ล้มเหลว', 'ไม่พบข้อมูลเอกสารนี้ในระบบ หรือสิทธิ์การแก้ไขถูกบล็อก', 'error');
             }
         }
     });
