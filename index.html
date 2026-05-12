@@ -1,379 +1,1514 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abhaibhubejhr Docs | Tracking</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>โรงพยาบาลเจ้าพระยาอภัยภูเบศร | ระบบติดตามเอกสาร</title>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g9:#00291E;--g8:#003D2D;--g7:#006a4e;--g6:#008A64;--g5:#00A878;
+  --g1:#E6F5F0;--g0:#F0FAF6;
+  --gold:#C9A84C;
+  --gr9:#111827;--gr7:#374151;--gr5:#6B7280;--gr4:#9CA3AF;--gr3:#D1D5DB;--gr1:#F3F4F6;--gr0:#F9FAFB;
+  --r6:#DC2626;--r1:#FEE2E2;
+  --a6:#D97706;--a1:#FEF3C7;
+  --s6:#0284C7;--s1:#E0F2FE;
+  --surf:#fff;--bdr:#E5E7EB;--rad:10px;--sw:280px;
+}
+body{font-family:'Sarabun',sans-serif;background:var(--gr1);color:var(--gr9);height:100vh;overflow:hidden;display:flex;flex-direction:column}
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
-        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
-        .modal-active { display: flex !important; }
-        #composeModal { display: none; }
-    </style>
+/* ══ AUTH SCREEN ══════════════════════ */
+#authScreen{position:fixed;inset:0;background:linear-gradient(135deg,var(--g9) 0%,var(--g8) 60%,#004D38 100%);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.auth-card{background:#fff;border-radius:18px;width:420px;box-shadow:0 24px 72px rgba(0,0,0,.35);overflow:hidden}
+.auth-top{background:var(--g8);padding:28px 32px 24px;text-align:center;border-bottom:3px solid var(--gold)}
+.auth-top img{height:44px;filter:brightness(0) invert(1) opacity(.92);margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;}
+.auth-hosp{font-size:14px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:2px}
+.auth-sub{font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.06em;text-transform:uppercase}
+.auth-tabs{display:flex;border-bottom:1px solid var(--bdr)}
+.auth-tab{flex:1;padding:14px;text-align:center;font-size:13px;font-weight:600;color:var(--gr5);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.auth-tab.active{color:var(--g7);border-bottom-color:var(--g7)}
+.auth-tab:hover:not(.active){color:var(--gr7);background:var(--gr0)}
+.auth-panel{display:none;padding:28px 32px 32px}
+.auth-panel.active{display:block}
+.auth-label{font-size:12px;font-weight:700;color:var(--gr7);margin-bottom:5px;display:block;letter-spacing:.03em}
+.auth-input{width:100%;padding:10px 14px;border:1px solid var(--bdr);border-radius:7px;font-family:inherit;font-size:14px;outline:none;transition:border .15s;margin-bottom:14px;color:var(--gr9)}
+.auth-input:focus{border-color:var(--g7);box-shadow:0 0 0 3px rgba(0,106,78,.08)}
+.auth-select{width:100%;padding:10px 14px;border:1px solid var(--bdr);border-radius:7px;font-family:inherit;font-size:14px;outline:none;transition:border .15s;margin-bottom:14px;color:var(--gr9);background:#fff}
+.auth-select:focus{border-color:var(--g7)}
+.auth-btn{width:100%;padding:12px;border:none;border-radius:8px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s;margin-top:4px}
+.auth-btn-primary{background:var(--g7);color:#fff}
+.auth-btn-primary:hover{background:var(--g6)}
+.auth-btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.auth-err{color:var(--r6);font-size:12px;text-align:center;margin-top:10px;min-height:18px}
+.auth-ok{color:var(--g7);font-size:12px;text-align:center;margin-top:10px;background:var(--g1);padding:10px 14px;border-radius:7px;display:none}
+.pending-notice{background:var(--a1);border:1px solid #E8D5A0;border-radius:8px;padding:14px 16px;text-align:center;display:none}
+.pending-notice i{color:var(--a6);font-size:20px;margin-bottom:6px;display:block}
+.pending-notice p{font-size:13px;color:var(--a6);font-weight:600;margin-bottom:2px}
+.pending-notice small{font-size:12px;color:var(--gr5)}
+
+/* ══ HEADER ══════════════════════════ */
+.header{height:62px;background:var(--g8);display:flex;align-items:center;padding:0 24px;justify-content:space-between;flex-shrink:0;border-bottom:3px solid var(--gold)}
+.hbrand{display:flex;align-items:center;gap:14px}
+.hbrand img{height:30px;filter:brightness(0) invert(1) opacity(.9)}
+.hdiv{width:1px;height:24px;background:rgba(255,255,255,.2)}
+.htitle{font-size:13px;font-weight:700;letter-spacing:.04em;color:rgba(255,255,255,.9);line-height:1.3}
+.htitle small{display:block;font-size:10px;font-weight:400;letter-spacing:.08em;opacity:.6;text-transform:uppercase}
+.hright{display:flex;align-items:center;gap:14px}
+.huser{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,.85);font-size:13px}
+.huser-info{line-height:1.3}
+.huser-name{font-weight:600;font-size:13px}
+.huser-role{font-size:10px;opacity:.65;letter-spacing:.04em}
+.huser-avatar{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--g9);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0}
+.btn-logout{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);padding:6px 12px;border-radius:6px;font-family:inherit;font-size:12px;cursor:pointer;transition:all .15s}
+.btn-logout:hover{background:rgba(255,255,255,.2);color:#fff}
+
+/* ══ SHELL ═══════════════════════════ */
+.shell{display:flex;flex:1;overflow:hidden}
+
+/* ══ SIDEBAR ══════════════════════════ */
+.sidebar{width:var(--sw);background:var(--g9);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sb-compose{margin:20px 16px 8px;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;background:var(--gold);color:var(--g9);border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s;width:calc(100% - 32px)}
+.sb-compose:hover{background:#dbb85a}
+.sb-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);padding:20px 20px 6px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;font-size:14px;color:rgba(255,255,255,.65);cursor:pointer;border-left:3px solid transparent;transition:all .15s;user-select:none}
+.nav-item i{width:18px;text-align:center;font-size:14px}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{border-left-color:var(--gold);background:rgba(255,255,255,.1);color:#fff;font-weight:600}
+.nav-badge{margin-left:auto;background:var(--gold);color:var(--g9);font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;min-width:20px;text-align:center}
+.nav-badge.red{background:var(--r6);color:#fff}
+.sb-div{height:1px;background:rgba(255,255,255,.08);margin:12px 16px}
+.admin-only{display:none}
+
+/* ══ MAIN ════════════════════════════ */
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.breadcrumb{padding:12px 28px;background:var(--surf);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gr5);flex-shrink:0}
+.bc-item{color:var(--gr5)}.bc-item.active{color:var(--g7);font-weight:600}
+.bc-sep{color:var(--gr4);font-size:11px}
+.page{display:none;padding:24px 28px;flex:1}
+.page.active{display:block}
+
+/* ══ STAT CARDS ══════════════════════ */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);padding:20px 20px 16px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.c-sky::after{background:var(--s6)}.c-amber::after{background:var(--a6)}.c-green::after{background:var(--g7)}.c-red::after{background:var(--r6)}
+.stat-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gr5);margin-bottom:6px}
+.stat-value{font-size:30px;font-weight:700;line-height:1;margin-bottom:4px}
+.c-sky .stat-value{color:var(--s6)}.c-amber .stat-value{color:var(--a6)}.c-green .stat-value{color:var(--g7)}.c-red .stat-value{color:var(--r6)}
+.stat-sub{font-size:12px;color:var(--gr5)}
+.stat-icon{position:absolute;right:16px;top:16px;font-size:28px;opacity:.1}
+.c-sky .stat-icon{color:var(--s6)}.c-amber .stat-icon{color:var(--a6)}.c-green .stat-icon{color:var(--g7)}.c-red .stat-icon{color:var(--r6)}
+
+/* ══ CHARTS ══════════════════════════ */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.chart-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);padding:22px}
+.chart-card-title{font-size:14px;font-weight:700;color:var(--gr7);margin-bottom:2px}
+.chart-card-sub{font-size:12px;color:var(--gr5);margin-bottom:16px}
+.chart-wrap{position:relative;height:210px}
+.apv-table{width:100%;border-collapse:collapse;font-size:13px}
+.apv-table thead th{background:var(--gr0);border-bottom:1px solid var(--bdr);padding:10px 14px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--gr5)}
+.apv-table tbody tr{border-bottom:1px solid var(--bdr)}
+.apv-table tbody tr:last-child{border-bottom:none}
+.apv-table td{padding:11px 14px;color:var(--gr7)}
+.apv-table td:first-child{font-weight:600;color:var(--gr9)}
+.apv-num{font-weight:700;font-size:15px}.apv-num.green{color:var(--g7)}.apv-num.amber{color:var(--a6)}.apv-num.red{color:var(--r6)}
+.apv-bar-bg{height:5px;background:var(--gr1);border-radius:4px;width:100%;min-width:80px}
+.apv-bar-fill{height:5px;border-radius:4px;background:var(--g6)}
+
+/* ══ TABLE ═══════════════════════════ */
+.table-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.table-title{font-size:16px;font-weight:700}.table-subtitle{font-size:13px;color:var(--gr5);margin-top:2px}
+.table-wrap{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--gr0);border-bottom:1px solid var(--bdr);padding:12px 18px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gr5);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--g0)}
+td{padding:13px 18px;vertical-align:middle;font-size:14px}
+.doc-no{font-size:12px;font-weight:700;color:var(--g7);letter-spacing:.04em;background:var(--g1);padding:3px 8px;border-radius:4px;display:inline-block}
+.doc-title{font-weight:600;color:var(--gr9);margin-bottom:3px}
+.doc-desc{font-size:12px;color:var(--gr5)}
+.prog-bg{height:4px;background:var(--gr3);border-radius:4px;width:110px;margin-top:8px}
+.prog-fill{height:4px;border-radius:4px;background:var(--g6);transition:width .4s}
+.prog-lbl{font-size:10px;color:var(--gr5);margin-top:3px}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.04em;margin-right:3px}
+.tag-A{background:#FDECEA;color:#C0392B}.tag-B{background:#FEF9EC;color:#B07D1A}.tag-C{background:#E8F5E9;color:#2E7D32}
+.tag-V{background:#F3E5F5;color:#6A1B9A}.tag-E{background:#E3F2FD;color:#0277BD}.tag-D{background:#EFEBE9;color:#4E342E}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.bdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.b-default{background:var(--gr1);color:var(--gr7)}.b-default .bdot{background:var(--gr5)}
+.b-pending{background:var(--a1);color:var(--a6)}.b-pending .bdot{background:var(--a6)}
+.b-rejected{background:var(--r1);color:var(--r6)}.b-rejected .bdot{background:var(--r6)}
+.b-done{background:var(--g1);color:var(--g7)}.b-done .bdot{background:var(--g7)}
+
+/* ══ BUTTONS ══════════════════════════ */
+.btn-sm{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.btn-green{background:var(--g7);color:#fff;border-color:var(--g7)}.btn-green:hover{background:var(--g6)}
+.btn-outline{background:transparent;color:var(--g7);border-color:var(--g7)}.btn-outline:hover{background:var(--g0)}
+.btn-danger{background:var(--r6);color:#fff;border-color:var(--r6)}.btn-danger:hover{background:#b91c1c}
+.btn-danger-o{background:transparent;color:var(--r6);border-color:var(--r6)}.btn-danger-o:hover{background:var(--r1)}
+.btn-ghost{background:transparent;color:var(--gr7);border-color:var(--bdr)}.btn-ghost:hover{background:var(--gr1)}
+.btn-amber{background:var(--a6);color:#fff;border-color:var(--a6)}.btn-amber:hover{background:#b96d12}
+.action-wrap{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.step-label{font-size:11px;color:var(--gr5)}
+
+/* ══ USER MANAGEMENT PAGE ════════════ */
+.user-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);padding:18px 20px;display:flex;align-items:center;gap:16px;margin-bottom:12px;transition:box-shadow .15s}
+.user-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.user-avatar-lg{width:44px;height:44px;border-radius:50%;background:var(--g7);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
+.user-avatar-lg.pending-av{background:var(--a6)}
+.user-info{flex:1}
+.user-name{font-size:15px;font-weight:700;color:var(--gr9);margin-bottom:2px}
+.user-meta{font-size:12px;color:var(--gr5)}
+.user-status{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;margin-left:8px}
+.us-approved{background:var(--g1);color:var(--g7)}.us-pending{background:var(--a1);color:var(--a6)}.us-rejected{background:var(--r1);color:var(--r6)}
+.user-actions{display:flex;gap:8px;flex-shrink:0}
+.section-title{font-size:15px;font-weight:700;color:var(--gr9);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-title i{color:var(--g7)}
+.pending-count{background:var(--r6);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+
+/* ══ COMPOSE MODAL ════════════════════ */
+.compose-modal{position:fixed;bottom:0;right:28px;z-index:100;width:500px;background:var(--surf);border:1px solid var(--bdr);border-bottom:none;border-radius:10px 10px 0 0;box-shadow:0 -6px 32px rgba(0,0,0,.12);display:none;flex-direction:column}
+.chead{background:var(--g8);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;border-radius:10px 10px 0 0;cursor:pointer}
+.chead span{font-size:14px;font-weight:700;color:#fff;letter-spacing:.03em}
+.chead-btns{display:flex;gap:14px}
+.chead-btns button{background:none;border:none;color:rgba(255,255,255,.6);font-size:15px;cursor:pointer;transition:color .1s;padding:0}
+.chead-btns button:hover{color:#fff}
+.cbody{padding:20px}
+.cfield{width:100%;border:none;border-bottom:1px solid var(--bdr);padding:10px 0;font-family:inherit;font-size:14px;color:var(--gr9);background:transparent;outline:none;transition:border .15s}
+.cfield::placeholder{color:var(--gr5)}
+.cfield:focus{border-bottom-color:var(--g7)}
+.carea{width:100%;border:none;padding:12px 0;font-family:inherit;font-size:14px;color:var(--gr9);background:transparent;outline:none;resize:none;min-height:90px}
+.carea::placeholder{color:var(--gr5)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.form-group label{font-size:11px;font-weight:700;color:var(--gr5);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px}
+.form-select{width:100%;padding:8px 10px;border:1px solid var(--bdr);border-radius:6px;font-family:inherit;font-size:13px;color:var(--gr9);background:#fff;outline:none;transition:border .15s}
+.form-select:focus{border-color:var(--g7)}
+.cfoot{padding:12px 20px;border-top:1px solid var(--bdr);background:var(--gr0);display:flex;align-items:center;justify-content:space-between}
+.cfoot-l{display:flex;align-items:center;gap:12px}
+.btn-submit{background:var(--g7);color:#fff;border:none;padding:8px 22px;border-radius:6px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s}
+.btn-submit:hover{background:var(--g6)}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed}
+.btn-attach{background:none;border:none;color:var(--gr5);font-size:18px;cursor:pointer;transition:color .15s}
+.btn-attach:hover{color:var(--g7)}
+.fname-tag{font-size:11px;color:var(--gr5);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-discard{background:none;border:none;color:var(--gr4);font-size:16px;cursor:pointer;transition:color .15s}
+.btn-discard:hover{color:var(--r6)}
+
+/* ══ OVERLAYS ════════════════════════ */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal-card{background:var(--surf);border-radius:12px;overflow:hidden;width:100%;max-width:400px;box-shadow:0 12px 48px rgba(0,0,0,.22)}
+.mhead{background:var(--g8);padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.mhead-title{font-size:15px;font-weight:700;color:#fff}
+.mclose{background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;cursor:pointer;line-height:1;transition:color .1s}
+.mclose:hover{color:#fff}
+.mbody{padding:24px 22px}
+.mfoot{padding:14px 22px;border-top:1px solid var(--bdr);background:var(--gr0)}
+.btn-full{width:100%;padding:10px;background:var(--surf);border:1px solid var(--bdr);border-radius:6px;font-family:inherit;font-size:14px;font-weight:600;color:var(--gr7);cursor:pointer;transition:all .15s}
+.btn-full:hover{background:var(--gr1)}
+.qr-wrap{display:flex;justify-content:center;margin-bottom:18px}
+.qr-inner{padding:14px;border:1px solid var(--bdr);border-radius:8px;background:#fff}
+.modal-doc-title{text-align:center;font-size:15px;font-weight:700;color:var(--gr9);margin-bottom:4px}
+.modal-doc-sub{text-align:center;font-size:12px;color:var(--gr5)}
+.pdf-modal{max-width:820px;height:88vh;display:flex;flex-direction:column}
+.pdf-modal .mbody{flex:1;padding:0;overflow:hidden}
+.pdf-modal iframe{width:100%;height:100%;border:none}
+.detail-modal{max-width:480px}
+.dhead{padding:18px 22px;border-bottom:1px solid var(--bdr);background:var(--g0)}
+.dhead-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gr5);margin-bottom:4px}
+.dhead-row{display:flex;align-items:flex-start;justify-content:space-between}
+.dhead-title{font-size:16px;font-weight:700;color:var(--gr9)}
+.dbody{padding:24px 22px;max-height:60vh;overflow-y:auto}
+.dfoot{padding:14px 22px;border-top:1px solid var(--bdr);background:var(--gr0)}
+.info-card{background:var(--surf);border:1px solid var(--bdr);border-radius:8px;padding:14px 16px;margin-bottom:22px}
+.info-card-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gr5);margin-bottom:8px}
+.info-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.timeline{position:relative;padding-left:30px}
+.timeline::before{content:'';position:absolute;left:9px;top:12px;bottom:12px;width:1px;background:var(--bdr)}
+.tl-item{position:relative;margin-bottom:22px}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-30px;top:2px;width:20px;height:20px;border-radius:50%;border:2px solid var(--bdr);background:var(--surf);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--gr5);z-index:1}
+.tl-dot.done{background:var(--g7);border-color:var(--g7);color:#fff}
+.tl-dot.rejected{background:var(--r6);border-color:var(--r6);color:#fff}
+.tl-name{font-size:14px;font-weight:700;color:var(--gr9);margin-bottom:2px}
+.tl-status{font-size:12px;color:var(--gr5)}
+.tl-remark{margin-top:8px;padding:8px 12px;background:var(--r1);border-left:3px solid var(--r6);border-radius:0 6px 6px 0;font-size:12px;color:var(--r6)}
+.tl-remark-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;opacity:.7}
+.state-row td{padding:60px 20px;text-align:center;color:var(--gr5);font-size:14px}
+.state-icon{font-size:36px;opacity:.25;display:block;margin-bottom:10px}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .stat-grid,.chart-grid{grid-template-columns:1fr 1fr}
+  .compose-modal{right:0;width:100%}
+  .pdf-modal{max-width:100%}
+}
+</style>
 </head>
-<body class="flex flex-col h-screen">
+<body>
 
-    <header class="h-16 flex items-center px-6 justify-between bg-white border-b shadow-sm z-50">
-        <div class="flex items-center gap-3">
-            <img src="https://www.abhaiherb.com/_nuxt/img/logo-large.f806b04.png" class="h-8">
-            <h1 class="font-bold text-[#006a4e]">DOCS TRACKING</h1>
-        </div>
-        <button onclick="toggleScanner()" class="bg-[#006a4e] text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-            <i class="fa-solid fa-qrcode"></i> สแกนรับงาน
-        </button>
-    </header>
-
-    <div class="flex flex-1 overflow-hidden">
-        <aside class="w-64 p-4 border-r bg-white hidden md:block">
-            <button onclick="toggleComposeModal()" class="w-full flex items-center justify-center gap-3 py-3 bg-[#c2e7ff] hover:bg-[#b3d9f2] rounded-2xl font-bold transition-all">
-                <i class="fa-solid fa-pencil"></i> สร้างเอกสาร
-            </button>
-            <div class="mt-6 space-y-1">
-                <div onclick="loadDocs('all')" class="p-3 rounded-lg hover:bg-gray-100 cursor-pointer text-gray-700 flex items-center gap-3">
-                    <i class="fa-solid fa-list"></i> ทั้งหมด
-                </div>
-                <div onclick="loadDocs('สร้างเอกสาร')" class="p-3 rounded-lg hover:bg-gray-100 cursor-pointer text-gray-700 flex items-center gap-3">
-                    <i class="fa-regular fa-clock"></i> รอดำเนินการ
-                </div>
-            </div>
-        </aside>
-
-        <main class="flex-1 overflow-y-auto p-4">
-            <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
-                <table class="w-full text-left">
-                    <thead class="bg-gray-50 border-b text-xs text-gray-500 uppercase">
-                        <tr>
-                            <th class="px-6 py-4">เลขเอกสาร</th>
-                            <th class="px-6 py-4">หัวข้อ</th>
-                            <th class="px-6 py-4">สถานะ</th>
-                            <th class="px-6 py-4">จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="docTableBody">
-                        </tbody>
-                </table>
-            </div>
-        </main>
+<!-- ══ AUTH SCREEN ══════════════════════════ -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-top">
+      <img src="https://www.abhaiherb.com/_nuxt/img/logo-large.f806b04.png" alt="Logo" onerror="this.style.display='none'">
+      <div class="auth-hosp">โรงพยาบาลเจ้าพระยาอภัยภูเบศร</div>
+      <div class="auth-sub">ระบบติดตามเอกสาร</div>
     </div>
-
-    <div id="composeModal" class="fixed inset-0 bg-black/50 z-[100] items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
-            <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl">
-                <span class="font-bold">เขียนเอกสารใหม่</span>
-                <button onclick="toggleComposeModal()" class="text-gray-500"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <form id="docForm" class="p-6 space-y-4">
-                <input type="text" id="subject" placeholder="ระบุชื่อเรื่อง" class="w-full border-b py-2 outline-none text-lg focus:border-[#006a4e]" required>
-                <textarea id="details" placeholder="รายละเอียด..." class="w-full border p-3 rounded-xl h-32 outline-none"></textarea>
-                <div class="border-2 border-dashed border-gray-200 p-4 rounded-xl text-center">
-                    <input type="file" id="pdfFile" accept="application/pdf" class="text-sm text-gray-500">
-                </div>
-                <button type="submit" id="btnSubmit" class="w-full bg-[#006a4e] text-white py-3 rounded-xl font-bold">บันทึกข้อมูล</button>
-            </form>
-        </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login',this)">เข้าสู่ระบบ</button>
+      <button class="auth-tab" onclick="switchTab('register',this)">สมัครสมาชิก</button>
     </div>
-
-   <div id="previewModal" class="hidden fixed inset-0 bg-black/60 z-[200] items-center justify-center p-4">
-    <div class="bg-white p-8 rounded-3xl w-full max-w-sm text-center">
-        <div id="qrcode-container" class="inline-block p-4 border rounded-2xl mb-4 bg-white"></div>
-        <h2 id="prevTitle" class="font-bold text-lg"></h2>
-        <p id="prevNo" class="text-blue-600 font-mono font-bold my-2"></p>
-        <button onclick="closePreview()" class="mt-4 w-full py-2 bg-gray-100 rounded-lg font-bold hover:bg-gray-200">ปิด</button>
+    <div class="auth-panel active" id="panel-login">
+      <label class="auth-label">อีเมล</label>
+      <input type="email" id="loginEmail" class="auth-input" placeholder="example@hospital.go.th">
+      <label class="auth-label">รหัสผ่าน</label>
+      <input type="password" id="loginPass" class="auth-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="auth-btn auth-btn-primary" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
+      <div class="auth-err" id="loginErr"></div>
+      <div class="pending-notice" id="pendingNotice">
+        <i class="fa-solid fa-clock"></i>
+        <p>บัญชีของคุณรอการอนุมัติจาก Admin</p>
+        <small>กรุณารอการติดต่อกลับจากเจ้าหน้าที่</small>
+      </div>
     </div>
+    <div class="auth-panel" id="panel-register">
+      <label class="auth-label">ชื่อ-นามสกุล</label>
+      <input type="text" id="regFullName" class="auth-input" placeholder="ชื่อ นามสกุล">
+      <label class="auth-label">อีเมล</label>
+      <input type="email" id="regEmail" class="auth-input" placeholder="example@hospital.go.th">
+      <label class="auth-label">รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+      <input type="password" id="regPass" class="auth-input" placeholder="••••••••">
+      <label class="auth-label">ตำแหน่ง</label>
+      <input type="text" id="regPosition" class="auth-input" placeholder="เช่น นักวิชาการสาธารณสุข">
+      <label class="auth-label">แผนก / ฝ่าย</label>
+      <select id="regDept" class="auth-select">
+        <option value="">— เลือกแผนก —</option>
+        <option>ฝ่ายการแพทย์</option>
+        <option>ฝ่ายการพยาบาล</option>
+        <option>ฝ่ายเภสัชกรรม</option>
+        <option>ฝ่ายการเงิน</option>
+        <option>ฝ่ายทรัพยากรบุคคล</option>
+        <option>ฝ่ายเทคโนโลยีสารสนเทศ</option>
+        <option>ฝ่ายบริหารทั่วไป</option>
+        <option>ฝ่ายวิชาการ</option>
+        <option>อื่น ๆ</option>
+      </select>
+      <button class="auth-btn auth-btn-primary" id="regBtn" onclick="doRegister()">ส่งคำขอสมัครสมาชิก</button>
+      <div class="auth-err" id="regErr"></div>
+      <div class="auth-ok" id="regOk"><i class="fa-solid fa-circle-check"></i> ส่งคำขอเรียบร้อยแล้ว! กรุณารอ Admin อนุมัติก่อนเข้าใช้งาน</div>
+    </div>
+  </div>
 </div>
 
-<div id="scannerModal" class="hidden fixed inset-0 bg-black/80 z-[300] items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden">
-        <div class="p-4 border-b flex justify-between">
-            <span class="font-bold">สแกน QR รับงาน</span>
-            <button onclick="toggleScanner()"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div id="reader"></div>
+<!-- ══ HEADER ══════════════════════════════ -->
+<header class="header">
+  <div class="hbrand">
+    <img src="https://www.abhaiherb.com/_nuxt/img/logo-large.f806b04.png" alt="Logo" onerror="this.style.display='none'">
+    <div class="hdiv"></div>
+    <div class="htitle">โรงพยาบาลเจ้าพระยาอภัยภูเบศร<small>ระบบติดตามเอกสาร</small></div>
+  </div>
+  <div class="hright">
+    <div class="huser">
+      <div class="huser-avatar" id="userAvatar">?</div>
+      <div class="huser-info">
+        <div class="huser-name" id="userName">—</div>
+        <div class="huser-role" id="userRole">—</div>
+      </div>
     </div>
-</div>
-<div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-[999] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-        <div class="p-6 border-b flex justify-between items-center bg-gray-50">
-            <h3 class="font-bold text-lg text-gray-800">ติดตามสถานะเอกสาร</h3>
-            <button onclick="closeDetail()" class="text-gray-400 hover:text-gray-600 text-3xl line-height-0">&times;</button>
-        </div>
-        <div id="detailContent" class="p-6 max-h-[70vh] overflow-y-auto">
-            </div>
-        <div class="p-4 bg-gray-50 border-t">
-            <button onclick="closeDetail()" class="w-full py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-bold text-gray-700 transition-colors">
-                ปิดหน้าต่าง
-            </button>
-        </div>
+    <button class="btn-logout" onclick="doLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> ออกจากระบบ</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar">
+    <button class="sb-compose" onclick="toggleCompose()"><i class="fa-solid fa-plus"></i> สร้างเอกสารใหม่</button>
+    <div class="sb-label">ภาพรวม</div>
+    <div class="nav-item" onclick="switchPage('dashboard');setNav(this)"><i class="fa-solid fa-chart-pie"></i> Dashboard</div>
+    <div class="sb-div"></div>
+    <div class="sb-label">เอกสาร</div>
+    <div class="nav-item active" onclick="switchPage('docs');loadDocs('all');setNav(this)"><i class="fa-solid fa-layer-group"></i> เอกสารทั้งหมด<span class="nav-badge" id="nb-all">—</span></div>
+    <div class="nav-item" onclick="switchPage('docs');loadDocs('สร้างเอกสาร');setNav(this)"><i class="fa-regular fa-file-lines"></i> รอดำเนินการ<span class="nav-badge" id="nb-pending">—</span></div>
+    <div class="nav-item" onclick="switchPage('docs');loadDocs('กำลังวนเซ็น');setNav(this)"><i class="fa-solid fa-pen-nib"></i> กำลังวนเซ็น</div>
+    <div class="nav-item" onclick="switchPage('docs');loadDocs('ส่งมอบสำเร็จ');setNav(this)"><i class="fa-solid fa-circle-check"></i> ส่งมอบสำเร็จ</div>
+    <div class="nav-item" onclick="switchPage('docs');loadDocs('ตีกลับ');setNav(this)"><i class="fa-solid fa-rotate-left"></i> ตีกลับ</div>
+    <div class="sb-div admin-only"></div>
+    <div class="sb-label admin-only">ผู้ดูแลระบบ</div>
+    <div class="nav-item admin-only" id="navUsers" onclick="switchPage('users');setNav(this)">
+      <i class="fa-solid fa-users-gear"></i> จัดการผู้ใช้
+      <span class="nav-badge red" id="nb-requests" style="display:none;">0</span>
     </div>
+  </aside>
+
+  <main class="main">
+    <nav class="breadcrumb">
+      <span class="bc-item"><i class="fa-solid fa-house" style="font-size:11px;"></i></span>
+      <span class="bc-sep"><i class="fa-solid fa-chevron-right" style="font-size:9px;"></i></span>
+      <span class="bc-item active" id="bc-current">เอกสารทั้งหมด</span>
+    </nav>
+
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard" class="page">
+      <div class="stat-grid">
+        <div class="stat-card c-sky"><i class="fa-solid fa-folder-open stat-icon"></i><div class="stat-label">ทั้งหมด</div><div class="stat-value" id="sc-total">—</div><div class="stat-sub">รายการเอกสาร</div></div>
+        <div class="stat-card c-amber"><i class="fa-regular fa-clock stat-icon"></i><div class="stat-label">รอดำเนินการ</div><div class="stat-value" id="sc-pending">—</div><div class="stat-sub">รายการ</div></div>
+        <div class="stat-card c-green"><i class="fa-solid fa-check-double stat-icon"></i><div class="stat-label">สำเร็จแล้ว</div><div class="stat-value" id="sc-done">—</div><div class="stat-sub">รายการ</div></div>
+        <div class="stat-card c-red"><i class="fa-solid fa-rotate-left stat-icon"></i><div class="stat-label">ตีกลับ</div><div class="stat-value" id="sc-rejected">—</div><div class="stat-sub">รายการ</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><div class="chart-card-title">เอกสารรายเดือน</div><div class="chart-card-sub">7 เดือนล่าสุด</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-card-title">สัดส่วนสถานะ</div><div class="chart-card-sub">เปรียบเทียบสถานะทั้งหมด</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
+      </div>
+      <div class="chart-grid" style="margin-bottom:24px;">
+        <div class="chart-card"><div class="chart-card-title">ABC Analysis</div><div class="chart-card-sub">การจัดกลุ่มตามความสำคัญเชิงมูลค่า</div><div class="chart-wrap"><canvas id="abcChart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-card-title">VED Analysis</div><div class="chart-card-sub">การจัดกลุ่มตามความจำเป็นเร่งด่วน</div><div class="chart-wrap"><canvas id="vedChart"></canvas></div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title" style="margin-bottom:4px;">สรุปขั้นตอนการอนุมัติ</div>
+        <div class="chart-card-sub">จำนวนเอกสารแต่ละขั้นตอน</div>
+        <div class="table-wrap" style="margin-top:4px;">
+          <table class="apv-table">
+            <thead><tr><th>ขั้นตอน / ผู้อนุมัติ</th><th style="width:90px;text-align:center;">เซ็นแล้ว</th><th style="width:90px;text-align:center;">รอเซ็น</th><th style="width:90px;text-align:center;">ตีกลับ</th><th style="width:160px;">ความคืบหน้า</th></tr></thead>
+            <tbody id="apvTableBody"><tr><td colspan="5" style="padding:24px;text-align:center;color:var(--gr5);">กำลังโหลด...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCS PAGE -->
+    <div id="page-docs" class="page active">
+      <div class="table-header">
+        <div><div class="table-title">รายการเอกสาร</div><div class="table-subtitle" id="tableSubtitle">กำลังโหลด...</div></div>
+        <button class="btn-sm btn-danger" onclick="deleteAllDocs()"><i class="fa-solid fa-trash"></i> ลบเอกสารทั้งหมด</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:120px;">เลขเอกสาร</th><th>หัวข้อ</th><th style="width:90px;">ABC</th><th style="width:90px;">VED</th><th style="width:130px;">สถานะ</th><th style="width:200px;">การดำเนินการ</th></tr></thead>
+          <tbody id="docTableBody"><tr class="state-row"><td colspan="6"><i class="fa-solid fa-spinner fa-spin state-icon"></i>กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- USERS PAGE -->
+    <div id="page-users" class="page">
+      <div id="pendingSection">
+        <div class="section-title"><i class="fa-solid fa-user-clock"></i> คำขอสมัครที่รออนุมัติ <span class="pending-count" id="pendingCountLabel">0</span></div>
+        <div id="pendingList"><div style="color:var(--gr5);font-size:13px;padding:20px 0;">กำลังโหลด...</div></div>
+      </div>
+      <div style="margin:28px 0 14px;"><div class="section-title"><i class="fa-solid fa-users"></i> ผู้ใช้ที่ได้รับอนุมัติแล้ว</div></div>
+      <div id="approvedList"><div style="color:var(--gr5);font-size:13px;padding:20px 0;">กำลังโหลด...</div></div>
+    </div>
+  </main>
 </div>
 
+<!-- COMPOSE MODAL -->
+<div class="compose-modal" id="composeModal">
+  <div class="chead" onclick="minimizeCompose()">
+    <span>สร้างเอกสารใหม่</span>
+    <div class="chead-btns">
+      <button title="ย่อ" onclick="event.stopPropagation();minimizeCompose()"><i class="fa-solid fa-minus"></i></button>
+      <button onclick="toggleCompose();event.stopPropagation();" title="ปิด"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  </div>
+  <div id="composeBody">
+    <div class="cbody">
+      <input type="text" id="subject" class="cfield" placeholder="ชื่อเรื่อง / หัวข้อเอกสาร" required>
+      <textarea id="details" class="carea" placeholder="รายละเอียดเอกสาร..." style="margin-top:12px;"></textarea>
+      <div class="form-row">
+        <div class="form-group"><label>ABC Analysis</label>
+          <select id="abcVal" class="form-select">
+            <option value="">— เลือก —</option>
+            <option value="A">A — สำคัญมาก</option>
+            <option value="B">B — ปานกลาง</option>
+            <option value="C">C — ทั่วไป</option>
+          </select>
+        </div>
+        <div class="form-group"><label>VED Analysis</label>
+          <select id="vedVal" class="form-select">
+            <option value="">— เลือก —</option>
+            <option value="V">V — เร่งด่วน</option>
+            <option value="E">E — จำเป็น</option>
+            <option value="D">D — เลื่อนได้</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="cfoot">
+      <div class="cfoot-l">
+        <button class="btn-submit" id="btnSubmit" onclick="submitDoc()">ส่งเอกสาร</button>
+        <label>
+          <button class="btn-attach" type="button" onclick="this.parentElement.querySelector('input').click()"><i class="fa-solid fa-paperclip"></i></button>
+          <input type="file" id="pdfFile" accept="application/pdf" style="display:none;" onchange="updateFileName(this)">
+        </label>
+        <span class="fname-tag" id="fileNameDisplay"></span>
+      </div>
+      <button class="btn-discard" onclick="toggleCompose()"><i class="fa-solid fa-trash-can"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="overlay" id="previewModal">
+  <div class="modal-card">
+    <div class="mhead"><span class="mhead-title">QR Code รับงาน</span><button class="mclose" onclick="closeQR()">&times;</button></div>
+    <div class="mbody">
+      <div class="qr-wrap"><div class="qr-inner" id="qrcode-container"></div></div>
+      <div class="modal-doc-title" id="prevTitle"></div>
+      <div class="modal-doc-sub">สแกน QR เพื่อรับงานเอกสาร</div>
+    </div>
+    <div class="mfoot"><button class="btn-full" onclick="closeQR()">ปิดหน้าต่าง</button></div>
+  </div>
+</div>
+
+<!-- PDF MODAL -->
+<div class="overlay" id="pdfModal">
+  <div class="modal-card pdf-modal" style="max-width:860px;">
+    <div class="mhead">
+      <span class="mhead-title" id="pdfModalTitle">ดูเอกสาร PDF</span>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <a id="pdfOpenLink" href="#" target="_blank" style="color:rgba(255,255,255,.7);font-size:13px;text-decoration:none;"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+        <button class="mclose" onclick="closePDF()">&times;</button>
+      </div>
+    </div>
+    <div class="mbody"><iframe id="pdfFrame" src=""></iframe></div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detailModal">
+  <div class="modal-card detail-modal">
+    <div class="dhead">
+      <div class="dhead-lbl">ติดตามสถานะเอกสาร</div>
+      <div class="dhead-row">
+        <div class="dhead-title" id="detailDocTitle">—</div>
+        <button class="mclose" style="color:var(--gr5);" onclick="closeDetail()">&times;</button>
+      </div>
+    </div>
+    <div class="dbody" id="detailContent"></div>
+    <div class="dfoot"><button class="btn-full" onclick="closeDetail()">ปิดหน้าต่าง</button></div>
+  </div>
+</div>
 
 <script>
-    // --- 1. ตั้งค่า Supabase ---
-    const SUPABASE_URL = 'https://lsajxgmstpokmxqcjrwd.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_9A3YXqClnAQT62tVSyvMyw_7k22B_DP';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ══════════════════════════════════════════════
+//  CONFIG — แก้ค่าเหล่านี้ให้ตรงกับ Supabase Project
+// ══════════════════════════════════════════════
+const SB_URL  = 'https://lsajxgmstpokmxqcjrwd.supabase.co';   // ← เปลี่ยน
+const SB_KEY  = 'sb_publishable_9A3YXqClnAQT62tVSyvMyw_7k22B_DP';                  // ← เปลี่ยน
+const ADMIN_EMAIL = 'admin@gmail.com';              // ← เปลี่ยนเป็นอีเมล Admin จริง
 
-    // --- 2. UI Logic ---
-    function toggleComposeModal() {
-        document.getElementById('composeModal').classList.toggle('modal-active');
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+// ══ STATE ════════════════════════════════════
+let barCI = null, pieCI = null, abcCI = null, vedCI = null;
+let currentUser   = null;   // row จากตาราง users
+let isAdmin       = false;
+let pendingQrId   = null;
+let _composeMinimized = false;
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+function setBreadcrumb(label) {
+  document.getElementById('bc-current').textContent = label;
+}
+
+function setNav(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function generateDocNo() {
+  const now = new Date();
+  const yy  = String(now.getFullYear()).slice(-2);
+  const mm  = String(now.getMonth() + 1).padStart(2, '0');
+  const rnd = String(Math.floor(Math.random() * 9000) + 1000);
+  return `DOC-${yy}${mm}-${rnd}`;
+}
+
+// ══════════════════════════════════════════════
+//  AUTH — TAB SWITCH
+// ══════════════════════════════════════════════
+function switchTab(type, el) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + type).classList.add('active');
+  // reset messages
+  ['loginErr','regErr'].forEach(id => document.getElementById(id).textContent = '');
+  document.getElementById('pendingNotice').style.display = 'none';
+  document.getElementById('regOk').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+//  LOGIN — query ตาราง users โดยตรง (ไม่ใช้ Supabase Auth)
+// ══════════════════════════════════════════════
+async function doLogin() {
+  const emailInput = document.getElementById('loginEmail').value.trim();
+  const passInput = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginErr');
+  const btn = document.getElementById('loginBtn');
+  
+  err.textContent = 'กำลังตรวจสอบ...';
+  btn.disabled = true;
+
+  try {
+    // ดึงข้อมูลมาทั้งหมดเพื่อเช็ก (เพื่อความชัวร์ในขั้นตอนนี้)
+    const { data: user, error } = await sb
+      .from('users')
+      .select('*')
+      .ilike('email', emailInput)
+      .maybeSingle();
+
+    if (error) {
+      console.error('DB Error:', error);
+      err.textContent = 'ติดต่อฐานข้อมูลไม่ได้';
+      return;
     }
 
-    function closePreview() {
-        document.getElementById('previewModal').classList.add('hidden');
+    // --- ส่วน Debug (ให้ดูใน Console F12) ---
+    console.log("สิ่งที่คุณพิมพ์:", { email: emailInput, pass: passInput });
+    console.log("ข้อมูลใน DB:", user);
+
+    if (!user) {
+      err.textContent = 'ไม่พบอีเมล: ' + emailInput;
+      return;
     }
 
-    function closeDetail() {
-        const modal = document.getElementById('detailModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+    // เช็ก Password (ระวังเรื่องตัวพิมพ์เล็ก-ใหญ่ และช่องว่าง)
+    if (String(user.password).trim() !== String(passInput).trim()) {
+      err.textContent = 'รหัสผ่านไม่ถูกต้อง';
+      return;
     }
 
-    // --- 3. โหลดข้อมูลลงตาราง ---
-    async function loadDocs(filter = 'all') {
-        const tbody = document.getElementById('docTableBody');
-        tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
-
-        try {
-            let query = _supabase.from('documents').select('*').order('created_at', { ascending: false });
-            if (filter !== 'all') query = query.eq('status', filter);
-
-            const { data, error } = await query;
-            if (error) throw error;
-
-            if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-gray-400">ไม่พบข้อมูลเอกสาร</td></tr>';
-                return;
-            }
-
-            let html = '';
-            data.forEach(d => {
-                let actionBtn = '';
-                let statusClass = '';
-                
-                if (d.status === 'ส่งมอบสำเร็จ') {
-                    statusClass = 'bg-gray-100 text-gray-600';
-                    actionBtn = `<span class="text-gray-400 text-[10px] italic">เสร็จสิ้น</span>`;
-                } 
-                else if (d.status === 'รับโดย Messenger' || d.status === 'กำลังวนเซ็น') {
-                    statusClass = 'bg-orange-100 text-orange-700';
-                    // โชว์ 2 ปุ่ม: จัดการเซ็น (ปุ่มหลัก) และ QR (ปุ่มรอง)
-                    actionBtn = `
-                        <div class="flex flex-col gap-1">
-                            <button onclick="handleNextStep('${d.id}', ${d.current_step}, '${d.title}')" 
-                                    class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-blue-700 shadow-sm transition-all">
-                                จัดการเซ็น (${d.current_step}/7)
-                            </button>
-                            <button onclick="viewQR('${d.id}', '${d.title}')" 
-                                    class="text-blue-500 hover:bg-blue-50 px-2 py-1 rounded text-[9px] border border-blue-200">
-                                <i class="fa-solid fa-qrcode"></i> ดู QR งาน
-                            </button>
-                        </div>`;
-                } 
-                else if (d.status === 'ตีกลับ') {
-                    statusClass = 'bg-red-100 text-red-700';
-                    actionBtn = `<button onclick="viewQR('${d.id}', '${d.title}')" class="text-blue-500 hover:underline text-[10px] font-bold">QR ใหม่</button>`;
-                }
-                else {
-                    // สถานะ "สร้างเอกสาร" (รอสแกนรับครั้งแรก)
-                    statusClass = 'bg-green-100 text-green-700';
-                    actionBtn = `
-                        <button onclick="viewQR('${d.id}', '${d.title}')" 
-                                class="bg-[#006a4e] text-white px-3 py-2 rounded-lg text-[10px] font-bold hover:opacity-90 flex items-center gap-1 shadow-sm">
-                            <i class="fa-solid fa-qrcode"></i> เปิด QR รับงาน
-                        </button>`;
-                }
-
-                const progressPercent = Math.min(((d.current_step || 1) / 7) * 100, 100);
-                const barColor = d.status === 'ส่งมอบสำเร็จ' ? 'bg-gray-400' : 'bg-[#006a4e]';
-
-                html += `
-                    <tr class="border-b hover:bg-gray-50 transition-colors cursor-pointer" onclick="viewDetail('${d.id}')">
-                        <td class="px-6 py-4 font-mono font-bold text-blue-600 text-xs">${d.doc_no || 'DOC-' + d.id.slice(0,4)}</td>
-                        <td class="px-6 py-4">
-                            <div class="font-medium text-gray-800 text-sm">${d.title}</div>
-                            <div class="w-full bg-gray-200 rounded-full h-1 mt-2 max-w-[120px]">
-                                <div class="${barColor} h-1 rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
-                            </div>
-                            <p class="text-[9px] text-gray-500 mt-1 italic">Step ${d.current_step || 1}/7</p>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 rounded-full text-[9px] font-bold ${statusClass}">${d.status}</span>
-                        </td>
-                        <td class="px-6 py-4" onclick="event.stopPropagation()">
-                            ${actionBtn}
-                        </td>
-                    </tr>`;
-            });
-            tbody.innerHTML = html;
-        } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-red-500 text-xs">Error: ${err.message}</td></tr>`;
-        }
+    // เช็ก Status
+    if (user.status !== 'approved') {
+      document.getElementById('pendingNotice').style.display = 'block';
+      err.textContent = '';
+      return;
     }
 
-    // --- 4. ฟังก์ชันจัดการขั้นตอนการเซ็น ---
-    async function handleNextStep(docId, currentStep, title) {
-        const { value: action } = await Swal.fire({
-            title: `จัดการขั้นตอนที่ ${currentStep}/7`,
-            text: `เรื่อง: ${title}`,
-            icon: 'question',
-            showCancelButton: true,
-            showDenyButton: true,
-            confirmButtonText: '✅ เซ็นแล้ว',
-            denyButtonText: '❌ ตีกลับ (Reject)',
-            cancelButtonText: 'ยกเลิก',
-            confirmButtonColor: '#059669',
-            denyButtonColor: '#d33',
-        });
+    // ถ้าผ่านหมด ให้เรียกฟังก์ชันเปลี่ยนหน้า
+    console.log('สำเร็จ! กำลังเข้าสู่หน้า Dashboard...');
+    initSession(user);
+    switchPage('dashboard');
 
-        if (action === true) {
-            Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
-            await _supabase.from('document_approvals').update({ status: 'เซ็นแล้ว', signed_at: new Date().toISOString() })
-                .eq('document_id', docId).eq('sequence_number', currentStep);
+  } catch (e) {
+    console.error('Runtime Error:', e);
+    err.textContent = 'เกิดข้อผิดพลาดบางอย่าง';
+  } finally {
+    btn.disabled = false;
+  }
+}
+// ── ตั้ง session หลัง login สำเร็จ ──────────
+function initSession(userData) {
+  currentUser = userData;
+  isAdmin = (userData.email === ADMIN_EMAIL) || (userData.role === 'admin');
 
-            let nextStep = currentStep + 1;
-            let finalStatus = 'กำลังวนเซ็น';
-            if (currentStep >= 7) { finalStatus = 'ส่งมอบสำเร็จ'; nextStep = 7; }
+  // --- ฟังก์ชันช่วยจัดการ Element แบบปลอดภัย ---
+  const safeStyle = (id, prop, val) => {
+    const el = document.getElementById(id);
+    if (el) el.style[prop] = val;
+  };
+  
+  const safeSet = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
 
-            const { error } = await _supabase.from('documents').update({ status: finalStatus, current_step: nextStep }).eq('id', docId);
+  // 1. ซ่อนหน้าจอ Auth
+  safeStyle('authScreen', 'display', 'none');
 
-            if (!error) {
-                Swal.fire('สำเร็จ', currentStep >= 7 ? 'จบงานเรียบร้อย!' : `ไปที่ขั้นตอนที่ ${nextStep}`, 'success');
-                loadDocs();
-            }
-        } 
-        else if (action === false) {
-            const { value: reason } = await Swal.fire({
-                title: 'เหตุผลการตีกลับ',
-                input: 'text',
-                inputPlaceholder: 'ระบุเหตุผล...',
-                showCancelButton: true,
-                confirmButtonText: 'ยืนยันตีกลับ',
-                confirmButtonColor: '#d33'
-            });
+  // 2. ตั้งค่าชื่อและข้อมูลผู้ใช้ (ใส่เช็คทุกจุด)
+  const fullName = userData.full_name || userData.email;
+  safeSet('userName', fullName);
 
-            if (reason) {
-                Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
-                await _supabase.from('document_approvals').update({ status: 'ตีกลับ', remarks: reason })
-                    .eq('document_id', docId).eq('sequence_number', currentStep);
-                await _supabase.from('documents').update({ status: 'ตีกลับ' }).eq('id', docId);
-                
-                Swal.fire('ตีกลับแล้ว', 'ส่งเรื่องกลับไปยังต้นทาง', 'error');
-                loadDocs();
-            }
-        }
+  const roleLabel = isAdmin ? 'ผู้ดูแลระบบ' : (userData.role === 'staff' ? 'เจ้าหน้าที่' : userData.role || '');
+  const deptLabel = userData.department ? '· ' + userData.department : '';
+  const fullRoleText = `${userData.position || roleLabel} ${deptLabel}`.trim();
+  
+  safeSet('userRole', fullRoleText);
+  safeSet('userAvatar', (fullName[0] || 'U').toUpperCase());
+
+  // 3. จัดการสิทธิ์ Admin
+  if (isAdmin) {
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+    // เช็คก่อนเรียกเผื่อยังไม่ได้ประกาศฟังก์ชันนี้
+    if (typeof loadPendingCount === 'function') loadPendingCount();
+  }
+
+  // 4. รันฟังก์ชันอื่นๆ ต่อ
+  if (typeof loadDocs === 'function') loadDocs('all');
+  if (typeof updateStats === 'function') updateStats();
+
+  // 5. ถ้ามี QR id รอ
+  if (pendingQrId && typeof processPendingQR === 'function') {
+    processPendingQR();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  REGISTER — insert ลงตาราง users โดยตรง
+// ══════════════════════════════════════════════
+async function doRegister() {
+  const fullName = document.getElementById('regFullName').value.trim();
+  const email    = document.getElementById('regEmail').value.trim().toLowerCase();
+  const pass     = document.getElementById('regPass').value;
+  const position = document.getElementById('regPosition').value.trim();
+  const dept     = document.getElementById('regDept').value;
+  const errEl    = document.getElementById('regErr');
+  const okEl     = document.getElementById('regOk');
+  errEl.textContent = ''; okEl.style.display = 'none';
+
+  if (!fullName || !email || !pass || !position || !dept) {
+    errEl.textContent = 'กรุณากรอกข้อมูลให้ครบทุกช่อง'; return;
+  }
+  if (pass.length < 6) {
+    errEl.textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'; return;
+  }
+
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true; btn.textContent = 'กำลังส่งคำขอ...';
+
+  try {
+    // ตรวจสอบอีเมลซ้ำ
+    const { data: existing } = await sb.from('users').select('id').eq('email', email).maybeSingle();
+    if (existing) { errEl.textContent = 'อีเมลนี้มีในระบบแล้ว'; return; }
+
+    const { error } = await sb.from('users').insert([{
+      full_name  : fullName,
+      email      : email,
+      password   : pass,       // เก็บ plain-text (แนะนำ hash ฝั่ง server ใน production)
+      position   : position,
+      department : dept,
+      status     : 'pending',
+      role       : 'staff',
+      created_at : new Date().toISOString()
+    }]);
+
+    if (error) { errEl.textContent = error.message; return; }
+
+    okEl.style.display = 'block';
+    ['regFullName','regEmail','regPass','regPosition'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('regDept').value = '';
+  } catch (e) {
+    errEl.textContent = 'เกิดข้อผิดพลาด: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'ส่งคำขอสมัครสมาชิก';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  LOGOUT
+// ══════════════════════════════════════════════
+function doLogout() {
+  currentUser = null;
+  isAdmin = false;
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('pendingNotice').style.display = 'none';
+  // ซ่อน admin menu
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+}
+
+// ══════════════════════════════════════════════
+//  QR — Messenger scan
+// ══════════════════════════════════════════════
+async function processPendingQR() {
+  if (!pendingQrId || !currentUser) return;
+  const id = pendingQrId;
+  pendingQrId = null;
+  try {
+    const { data, error } = await sb.from('documents')
+      .update({ status: 'รับโดย Messenger', updated_at: new Date().toISOString() })
+      .eq('id', id.trim())
+      .select();
+    if (!error && data?.length > 0) {
+      await Swal.fire('สำเร็จ!', 'Messenger รับงานเรียบร้อย', 'success');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      loadDocs('all');
+    }
+  } catch (e) { console.error('processPendingQR:', e); }
+}
+
+// ══════════════════════════════════════════════
+//  USER MANAGEMENT (Admin only)
+// ══════════════════════════════════════════════
+async function loadPendingCount() {
+  const { data } = await sb.from('users').select('id').eq('status', 'pending');
+  const count = data?.length || 0;
+  const badge = document.getElementById('nb-requests');
+  badge.textContent = count;
+  badge.style.display = count > 0 ? '' : 'none';
+}
+
+async function loadUsersPage() {
+  await loadPendingUsers();
+  await loadApprovedUsers();
+}
+
+async function loadPendingUsers() {
+  const container   = document.getElementById('pendingList');
+  const countLabel  = document.getElementById('pendingCountLabel');
+  container.innerHTML = '<div style="color:var(--gr5);font-size:13px;">กำลังโหลด...</div>';
+  const { data } = await sb.from('users').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+  countLabel.textContent = data?.length || 0;
+  if (!data?.length) { container.innerHTML = '<div style="color:var(--gr5);font-size:13px;padding:12px 0;">ไม่มีคำขอที่รออนุมัติ</div>'; return; }
+  container.innerHTML = data.map(u => {
+    const name = u.full_name || 'ไม่ระบุ';
+    const safeName = name.replace(/'/g, "\\'");
+    return `<div class="user-card">
+      <div class="user-avatar-lg pending-av">${(name[0]||'?').toUpperCase()}</div>
+      <div class="user-info">
+        <div class="user-name">${name} <span class="user-status us-pending"><i class="fa-solid fa-clock" style="font-size:9px;"></i> รออนุมัติ</span></div>
+        <div class="user-meta">${u.email||'—'} &nbsp;·&nbsp; ${u.position||'—'} &nbsp;·&nbsp; ${u.department||'—'}</div>
+      </div>
+      <div class="user-actions">
+        <button class="btn-sm btn-green" onclick="approveUser(${u.id})"><i class="fa-solid fa-check"></i> อนุมัติ</button>
+        <button class="btn-sm btn-danger-o" onclick="rejectUser(${u.id},'${safeName}')"><i class="fa-solid fa-xmark"></i> ปฏิเสธ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadApprovedUsers() {
+  const container = document.getElementById('approvedList');
+  container.innerHTML = '<div style="color:var(--gr5);font-size:13px;">กำลังโหลด...</div>';
+  const { data } = await sb.from('users').select('*').eq('status', 'approved').order('full_name', { ascending: true });
+  if (!data?.length) { container.innerHTML = '<div style="color:var(--gr5);font-size:13px;padding:12px 0;">ยังไม่มีผู้ใช้</div>'; return; }
+  container.innerHTML = data.map(u => {
+    const name = u.full_name || 'ไม่ระบุ';
+    const safeName = name.replace(/'/g, "\\'");
+    return `<div class="user-card">
+      <div class="user-avatar-lg">${(name[0]||'U').toUpperCase()}</div>
+      <div class="user-info">
+        <div class="user-name">${name} <span class="user-status us-approved"><i class="fa-solid fa-circle-check" style="font-size:9px;"></i> อนุมัติแล้ว</span></div>
+        <div class="user-meta">${u.email||'—'} &nbsp;·&nbsp; ${u.position||'—'} &nbsp;·&nbsp; ${u.department||'—'}</div>
+      </div>
+      <div class="user-actions">
+        <button class="btn-sm btn-danger-o" onclick="revokeUser(${u.id},'${safeName}')"><i class="fa-solid fa-ban"></i> ระงับ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function approveUser(id) {
+  Swal.fire({ title: 'กำลังอนุมัติ...', didOpen: () => Swal.showLoading() });
+  await sb.from('users').update({ status: 'approved' }).eq('id', id);
+  Swal.fire('อนุมัติแล้ว!', '', 'success');
+  loadUsersPage(); loadPendingCount();
+}
+
+async function rejectUser(id, name) {
+  const res = await Swal.fire({ title: `ปฏิเสธบัญชี ${name}?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'ยืนยันปฏิเสธ', confirmButtonColor: '#DC2626', cancelButtonText: 'ยกเลิก' });
+  if (!res.isConfirmed) return;
+  await sb.from('users').update({ status: 'rejected' }).eq('id', id);
+  Swal.fire('ปฏิเสธแล้ว', '', 'info');
+  loadUsersPage(); loadPendingCount();
+}
+
+async function revokeUser(id, name) {
+  const res = await Swal.fire({ title: `ระงับบัญชี ${name}?`, text: 'ผู้ใช้จะไม่สามารถเข้าสู่ระบบได้จนกว่าจะอนุมัติใหม่', icon: 'warning', showCancelButton: true, confirmButtonText: 'ระงับ', confirmButtonColor: '#DC2626', cancelButtonText: 'ยกเลิก' });
+  if (!res.isConfirmed) return;
+  await sb.from('users').update({ status: 'pending' }).eq('id', id);
+  Swal.fire('ระงับแล้ว', '', 'info');
+  loadUsersPage(); loadPendingCount();
+}
+
+// ══════════════════════════════════════════════
+//  NAV / PAGE SWITCH
+// ══════════════════════════════════════════════
+function switchPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  const titles = { dashboard: 'Dashboard', docs: 'เอกสารทั้งหมด', users: 'จัดการผู้ใช้' };
+  setBreadcrumb(titles[pageId] || pageId);
+  if (pageId === 'dashboard') loadDashboard();
+  if (pageId === 'users' && isAdmin) loadUsersPage();
+}
+
+// ══════════════════════════════════════════════
+//  COMPOSE MODAL
+// ══════════════════════════════════════════════
+function toggleCompose() {
+  const m = document.getElementById('composeModal');
+  const isOpen = m.style.display === 'flex';
+  m.style.display = isOpen ? 'none' : 'flex';
+  if (!isOpen) {
+    document.getElementById('composeBody').style.display = 'block';
+    _composeMinimized = false;
+  }
+}
+
+function minimizeCompose() {
+  const b = document.getElementById('composeBody');
+  _composeMinimized = !_composeMinimized;
+  b.style.display = _composeMinimized ? 'none' : 'block';
+}
+
+function updateFileName(input) {
+  document.getElementById('fileNameDisplay').textContent = input.files[0] ? input.files[0].name : '';
+}
+
+// ══════════════════════════════════════════════
+//  LOAD DOCS
+// ══════════════════════════════════════════════
+async function loadDocs(filter = 'all') {
+  const tbody = document.getElementById('docTableBody');
+  tbody.innerHTML = '<tr class="state-row"><td colspan="6"><i class="fa-solid fa-spinner fa-spin state-icon"></i>กำลังโหลด...</td></tr>';
+  document.getElementById('tableSubtitle').textContent = 'กำลังโหลด...';
+  setBreadcrumb(filter === 'all' ? 'เอกสารทั้งหมด' : filter);
+
+  try {
+    let q = sb.from('documents').select('*').order('created_at', { ascending: false });
+    if (filter !== 'all') q = q.eq('status', filter);
+    const { data, error } = await q;
+    if (error) throw error;
+
+    updateStats();
+
+    if (!data?.length) {
+      tbody.innerHTML = '<tr class="state-row"><td colspan="6"><i class="fa-solid fa-folder-open state-icon"></i>ไม่พบรายการเอกสาร</td></tr>';
+      document.getElementById('tableSubtitle').textContent = '0 รายการ';
+      return;
     }
 
-    // --- 5. ระบบไทม์ไลน์ ---
-    async function viewDetail(docId) {
-        const modal = document.getElementById('detailModal');
-        const content = document.getElementById('detailContent');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        content.innerHTML = '<div class="text-center py-10 text-xs text-gray-500">กำลังโหลด...</div>';
+    document.getElementById('tableSubtitle').textContent = data.length + ' รายการ';
+    let html = '';
 
-        try {
-            const { data: steps } = await _supabase.from('document_approvals').select('*').eq('document_id', docId).order('sequence_number', { ascending: true });
-            let html = '<div class="relative pl-8 space-y-6"><div class="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200"></div>';
-            steps.forEach((s, idx) => {
-                const isDone = s.status === 'เซ็นแล้ว';
-                const isReject = s.status === 'ตีกลับ';
-                let iconClass = 'bg-gray-200 text-gray-400';
-                if (isDone) iconClass = 'bg-green-500 text-white';
-                else if (isReject) iconClass = 'bg-red-500 text-white';
+    data.forEach(d => {
+      let bc = 'b-default';
+      if (d.status === 'รับโดย Messenger' || d.status === 'กำลังวนเซ็น') bc = 'b-pending';
+      else if (d.status === 'ตีกลับ')        bc = 'b-rejected';
+      else if (d.status === 'ส่งมอบสำเร็จ') bc = 'b-done';
 
-                html += `
-                    <div class="relative">
-                        <div class="absolute -left-[29px] w-6 h-6 rounded-full ${iconClass} flex items-center justify-center font-bold text-[10px] z-10 border-2 border-white">
-                            ${isDone ? '✓' : (isReject ? '✕' : idx+1)}
-                        </div>
-                        <div>
-                            <p class="font-bold text-sm text-gray-700">${s.approver_name}</p>
-                            <p class="text-[10px] text-gray-400">${s.status} ${s.signed_at ? '| ' + new Date(s.signed_at).toLocaleTimeString('th-TH') : ''}</p>
-                            ${s.remarks ? `<p class="text-[10px] text-red-500 bg-red-50 p-2 mt-1 rounded italic">เหตุผล: ${s.remarks}</p>` : ''}
-                        </div>
-                    </div>`;
-            });
-            content.innerHTML = html + '</div>';
-        } catch (err) { content.innerHTML = 'Error loading timeline'; }
-    }
+      const pct  = d.status === 'ส่งมอบสำเร็จ' ? 100 : Math.min(((d.current_step || 1) / 7) * 100, 100);
+      const barC = d.status === 'ส่งมอบสำเร็จ' ? 'var(--g7)' : 'var(--g6)';
 
-    // --- 6. ระบบ QR & Scanner ---
-    let html5QrCode;
-    async function toggleScanner() {
-        const modal = document.getElementById('scannerModal');
-        modal.classList.toggle('hidden');
-        if (!modal.classList.contains('hidden')) {
-            html5QrCode = new Html5Qrcode("reader");
-            await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
-        } else if (html5QrCode) { await html5QrCode.stop(); }
-    }
+      const abcTag = d.abc_analysis ? `<span class="tag tag-${d.abc_analysis}">${d.abc_analysis}</span>` : '<span style="font-size:11px;color:var(--gr4);">—</span>';
+      const vedTag = d.ved_analysis ? `<span class="tag tag-${d.ved_analysis}">${d.ved_analysis}</span>` : '<span style="font-size:11px;color:var(--gr4);">—</span>';
 
-    async function onScanSuccess(decodedText) {
-        if (html5QrCode) await html5QrCode.stop();
-        toggleScanner();
-        let finalId = decodedText.includes('id=') ? new URL(decodedText).searchParams.get('id') : decodedText;
-        updateStatus(finalId);
-    }
+      // escape สำหรับ onclick attribute
+      const safeId    = d.id;
+      const safeTitle = (d.title || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const safeUrl   = d.file_url ? d.file_url.replace(/'/g,"\\'") : '';
 
-    async function updateStatus(docId) {
-        if(!docId) return;
-        Swal.fire({ title: 'กำลังรับงาน...', didOpen: () => Swal.showLoading() });
-        const { data, error } = await _supabase.from('documents').update({ status: 'รับโดย Messenger' }).eq('id', docId.trim()).select();
-        if (!error && data.length > 0) {
-            Swal.fire('สำเร็จ!', 'Messenger รับงานเรียบร้อย', 'success').then(() => {
-                window.history.replaceState({}, document.title, window.location.pathname);
-                loadDocs();
-            });
-        }
-    }
+      const pdfBtns = d.file_url
+        ? `<div style="display:flex;gap:5px;margin-top:5px;">
+            <button class="btn-sm btn-ghost" style="font-size:11px;" onclick="event.stopPropagation();previewPDF('${safeUrl}','${safeTitle}')"><i class="fa-solid fa-file-pdf" style="color:var(--r6);"></i> ดู PDF</button>
+            <button class="btn-sm btn-danger-o" style="font-size:11px;" onclick="event.stopPropagation();deleteFile('${safeId}','${safeUrl}')"><i class="fa-solid fa-file-circle-xmark"></i> ลบไฟล์</button>
+          </div>` : '';
 
-    function viewQR(id, title) {
-        const qrBox = document.getElementById('qrcode-container');
-        qrBox.innerHTML = '';
-        const currentUrl = window.location.href.split('?')[0]; 
-        const fullLink = `${currentUrl}?id=${id}`;
-        new QRCode(qrBox, { text: fullLink, width: 180, height: 180 });
-        document.getElementById('prevTitle').innerText = title;
-        document.getElementById('previewModal').classList.remove('hidden');
-    }
+      let action = '';
+      if (d.status === 'ส่งมอบสำเร็จ') {
+        action = '<span style="font-size:12px;color:var(--gr5);font-style:italic;">เสร็จสิ้น</span>';
+      } else if (d.status === 'รับโดย Messenger' || d.status === 'กำลังวนเซ็น') {
+        action = `<div class="action-wrap">
+          <button class="btn-sm btn-green" onclick="event.stopPropagation();handleNextStep('${safeId}',${d.current_step},'${safeTitle}')"><i class="fa-solid fa-pen"></i> จัดการเซ็น</button>
+          <span class="step-label">ขั้นตอนที่ ${d.current_step}/7</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-sm btn-outline" onclick="event.stopPropagation();viewQR('${safeId}','${safeTitle}')"><i class="fa-solid fa-qrcode"></i> QR</button>
+            <button class="btn-sm btn-danger-o" onclick="event.stopPropagation();deleteDoc('${safeId}','${safeTitle}')"><i class="fa-solid fa-trash"></i></button>
+          </div></div>`;
+      } else if (d.status === 'ตีกลับ') {
+        action = `<div class="action-wrap">
+          <button class="btn-sm btn-amber" onclick="event.stopPropagation();viewQR('${safeId}','${safeTitle}')"><i class="fa-solid fa-qrcode"></i> QR ใหม่</button>
+          <button class="btn-sm btn-danger-o" onclick="event.stopPropagation();deleteDoc('${safeId}','${safeTitle}')"><i class="fa-solid fa-trash"></i> ลบ</button>
+        </div>`;
+      } else {
+        action = `<div class="action-wrap">
+          <button class="btn-sm btn-green" onclick="event.stopPropagation();viewQR('${safeId}','${safeTitle}')"><i class="fa-solid fa-qrcode"></i> เปิด QR รับงาน</button>
+          <button class="btn-sm btn-danger-o" onclick="event.stopPropagation();deleteDoc('${safeId}','${safeTitle}')"><i class="fa-solid fa-trash"></i> ลบ</button>
+        </div>`;
+      }
 
-    // --- 7. บันทึกข้อมูลใหม่ ---
-    document.getElementById('docForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btnSubmit');
-        btn.disabled = true;
-        const title = document.getElementById('subject').value;
-        const desc = document.getElementById('details').value;
+      const docNo = d.doc_no || 'DOC-' + d.id.toString().padStart(6,'0');
 
-        try {
-            const { data: newDoc } = await _supabase.from('documents').insert([{ title, description: desc, status: 'สร้างเอกสาร', current_step: 1 }]).select();
-            const approvers = ['หัวหน้าแผนก', 'ผู้ช่วย ผอ.', 'ผอ.กอง', 'ฝ่ายบัญชี', 'ผู้เชี่ยวชาญ', 'รองอธิบดี', 'อธิบดี'];
-            const approvalRows = approvers.map((name, i) => ({ document_id: newDoc[0].id, approver_name: name, sequence_number: i+1, status: 'ยังไม่เซ็น' }));
-            await _supabase.from('document_approvals').insert(approvalRows);
-            
-            Swal.fire('สำเร็จ', 'สร้างงานเดินเอกสารเรียบร้อย', 'success');
-            document.getElementById('docForm').reset();
-            toggleComposeModal();
-            loadDocs();
-        } catch (err) { Swal.fire('Error', err.message, 'error'); }
-        finally { btn.disabled = false; }
+      html += `<tr onclick="viewDetail('${safeId}')">
+        <td><span class="doc-no">${docNo}</span></td>
+        <td>
+          <div class="doc-title">${d.title}</div>
+          ${d.description ? `<div class="doc-desc">${d.description.substring(0,55)}${d.description.length>55?'…':''}</div>` : ''}
+          ${pdfBtns}
+          <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${barC};"></div></div>
+          <div class="prog-lbl">${d.current_step||1} / 7 ขั้นตอน</div>
+        </td>
+        <td>${abcTag}</td>
+        <td>${vedTag}</td>
+        <td><span class="badge ${bc}"><span class="bdot"></span>${d.status}</span></td>
+        <td onclick="event.stopPropagation()">${action}</td>
+      </tr>`;
     });
 
-    window.onload = () => {
-        loadDocs(); 
-        const scannedId = new URLSearchParams(window.location.search).get('id');
-        if (scannedId) updateStatus(scannedId);
+    tbody.innerHTML = html;
+  } catch (err) {
+    tbody.innerHTML = `<tr class="state-row"><td colspan="6" style="color:var(--r6);">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
+  }
+}
+
+// ══════════════════════════════════════════════
+//  STATS (sidebar badges + dashboard cards)
+// ══════════════════════════════════════════════
+async function updateStats() {
+  try {
+    const { data, error } = await sb.from('documents').select('status');
+    if (error || !data) return;
+
+    const t  = data.length;
+    const p  = data.filter(d => d.status === 'สร้างเอกสาร').length;
+    const dn = data.filter(d => d.status === 'ส่งมอบสำเร็จ').length;
+    const r  = data.filter(d => d.status === 'ตีกลับ').length;
+
+    //สร้างฟังก์ชันช่วยเขียนค่าแบบ "ถ้าไม่มี ID ก็ไม่ต้องพัง"
+    const safeSet = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = value;
+      }
     };
+
+    // เรียกใช้ทีละตัว ถ้าตัวไหนไม่มีใน HTML ของหน้านั้นๆ มันจะข้ามไปเอง
+    safeSet('sc-total', t);
+    safeSet('sc-pending', p);
+    safeSet('sc-done', dn);
+    safeSet('sc-rejected', r);
+    safeSet('nb-all', t);
+    safeSet('nb-pending', p);
+
+  } catch (err) {
+    // ใส่ไว้เพื่อดูใน Console ว่ามีอะไรผิดพลาดอย่างอื่นไหม แต่หน้าเว็บจะไม่ค้าง
+    console.warn("UpdateStats warning:", err.message);
+  }
+}
+// ══════════════════════════════════════════════
+//  DELETE OPERATIONS
+// ══════════════════════════════════════════════
+async function deleteFile(docId, fileUrl) {
+  const res = await Swal.fire({ title: 'ลบไฟล์แนบ?', text: 'ไฟล์ PDF จะถูกลบออกจากเอกสารนี้', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบไฟล์', confirmButtonColor: '#DC2626', cancelButtonText: 'ยกเลิก' });
+  if (!res.isConfirmed) return;
+  Swal.fire({ title: 'กำลังลบ...', didOpen: () => Swal.showLoading() });
+  try {
+    const parts = fileUrl.split('/document-files/');
+    if (parts[1]) await sb.storage.from('document-files').remove([decodeURIComponent(parts[1])]);
+    await sb.from('documents').update({ file_url: null }).eq('id', docId);
+    Swal.fire('ลบไฟล์แล้ว', '', 'success');
+    loadDocs('all');
+  } catch (e) { Swal.fire('Error', e.message, 'error'); }
+}
+
+async function deleteDoc(docId, title) {
+  const res = await Swal.fire({ title: 'ลบเอกสาร?', html: `<b>${title}</b><br><small>ไม่สามารถย้อนกลับได้</small>`, icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#DC2626', cancelButtonText: 'ยกเลิก' });
+  if (!res.isConfirmed) return;
+  Swal.fire({ title: 'กำลังลบ...', didOpen: () => Swal.showLoading() });
+  await sb.from('document_approvals').delete().eq('document_id', docId);
+  await sb.from('documents').delete().eq('id', docId);
+  Swal.fire('ลบแล้ว', '', 'success');
+  loadDocs('all');
+}
+
+async function deleteAllDocs() {
+  const res = await Swal.fire({
+    title: 'ลบเอกสารทั้งหมด?',
+    html: '<span style="color:#DC2626;font-weight:700;">คำเตือน:</span> ไม่สามารถกู้คืนได้',
+    icon: 'warning',
+    input: 'text',
+    inputPlaceholder: 'พิมพ์ "ยืนยันลบทั้งหมด"',
+    showCancelButton: true,
+    confirmButtonText: 'ลบทั้งหมด',
+    confirmButtonColor: '#DC2626',
+    cancelButtonText: 'ยกเลิก',
+    preConfirm: (v) => {
+      if (v !== 'ยืนยันลบทั้งหมด') { Swal.showValidationMessage('กรุณาพิมพ์ข้อความให้ถูกต้อง'); return false; }
+    }
+  });
+  if (!res.isConfirmed) return;
+  Swal.fire({ title: 'กำลังลบ...', didOpen: () => Swal.showLoading() });
+  // ลบ approvals ก่อน (FK constraint)
+  await sb.from('document_approvals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  await sb.from('documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  Swal.fire('ลบแล้ว', '', 'success');
+  loadDocs('all');
+}
+
+// ══════════════════════════════════════════════
+//  PDF PREVIEW
+// ══════════════════════════════════════════════
+function previewPDF(url, title) {
+  document.getElementById('pdfFrame').src = url;
+  document.getElementById('pdfModalTitle').textContent = title || 'ดูเอกสาร PDF';
+  document.getElementById('pdfOpenLink').href = url;
+  document.getElementById('pdfModal').classList.add('open');
+}
+function closePDF() {
+  document.getElementById('pdfModal').classList.remove('open');
+  document.getElementById('pdfFrame').src = '';
+}
+
+// ══════════════════════════════════════════════
+//  DASHBOARD CHARTS
+// ══════════════════════════════════════════════
+async function loadDashboard() {
+  updateStats();
+  await Promise.all([loadBarChart(), loadPieChart(), loadABCChart(), loadVEDChart(), loadApvTable()]);
+}
+
+async function loadBarChart() {
+  try {
+    const { data } = await sb.from('documents').select('created_at');
+    if (!data) return;
+    const months = {};
+    data.forEach(d => {
+      const dt  = new Date(d.created_at);
+      const key = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+      months[key] = (months[key]||0) + 1;
+    });
+    const labels = [], values = [];
+    for (let i = 6; i >= 0; i--) {
+      const dt  = new Date();
+      dt.setMonth(dt.getMonth() - i);
+      const key = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+      labels.push(dt.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' }));
+      values.push(months[key] || 0);
+    }
+    if (barCI) barCI.destroy();
+    barCI = new Chart(document.getElementById('barChart').getContext('2d'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'เอกสาร', data: values, backgroundColor: '#006a4e', borderRadius: 5, borderSkipped: false }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Sarabun', size: 11 } }, grid: { color: '#f0f0f0' } }, x: { ticks: { font: { family: 'Sarabun', size: 11 } }, grid: { display: false } } } }
+    });
+  } catch (_) {}
+}
+
+async function loadPieChart() {
+  try {
+    const { data } = await sb.from('documents').select('status');
+    if (!data?.length) return;
+    const counts = { 'สร้างเอกสาร':0,'รับโดย Messenger':0,'กำลังวนเซ็น':0,'ส่งมอบสำเร็จ':0,'ตีกลับ':0 };
+    data.forEach(d => { if (counts[d.status] !== undefined) counts[d.status]++; });
+    const labels = Object.keys(counts).filter(k => counts[k] > 0);
+    const values = labels.map(k => counts[k]);
+    if (pieCI) pieCI.destroy();
+    pieCI = new Chart(document.getElementById('pieChart').getContext('2d'), {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: values, backgroundColor: ['#D97706','#0284C7','#008A64','#006a4e','#DC2626'].slice(0, labels.length), borderWidth: 2, borderColor: '#fff' }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'right', labels: { font: { family: 'Sarabun', size: 11 }, padding: 10, boxWidth: 12 } } } }
+    });
+  } catch (_) {}
+}
+
+async function loadABCChart() {
+  try {
+    const { data } = await sb.from('documents').select('abc_analysis');
+    if (!data) return;
+    const c = { A: 0, B: 0, C: 0 };
+    data.forEach(d => { if (d.abc_analysis && c[d.abc_analysis] !== undefined) c[d.abc_analysis]++; });
+    if (abcCI) abcCI.destroy();
+    abcCI = new Chart(document.getElementById('abcChart').getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: ['A — สำคัญมาก','B — ปานกลาง','C — ทั่วไป'], datasets: [{ data: [c.A,c.B,c.C], backgroundColor: ['#C0392B','#D97706','#2E7D32'], borderWidth: 2, borderColor: '#fff' }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { font: { family: 'Sarabun', size: 11 }, padding: 10, boxWidth: 12 } } } }
+    });
+  } catch (_) {}
+}
+
+async function loadVEDChart() {
+  try {
+    const { data } = await sb.from('documents').select('ved_analysis');
+    if (!data) return;
+    const c = { V: 0, E: 0, D: 0 };
+    data.forEach(d => { if (d.ved_analysis && c[d.ved_analysis] !== undefined) c[d.ved_analysis]++; });
+    if (vedCI) vedCI.destroy();
+    vedCI = new Chart(document.getElementById('vedChart').getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: ['V — เร่งด่วน','E — จำเป็น','D — เลื่อนได้'], datasets: [{ data: [c.V,c.E,c.D], backgroundColor: ['#6A1B9A','#0277BD','#4E342E'], borderWidth: 2, borderColor: '#fff' }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { font: { family: 'Sarabun', size: 11 }, padding: 10, boxWidth: 12 } } } }
+    });
+  } catch (_) {}
+}
+
+async function loadApvTable() {
+  const tbody = document.getElementById('apvTableBody');
+  tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--gr5);">กำลังโหลด...</td></tr>';
+  try {
+    const { data } = await sb.from('document_approvals').select('approver_name,sequence_number,status');
+    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--gr5);">ไม่มีข้อมูล</td></tr>'; return; }
+    const approvers = ['หัวหน้าแผนก','ผู้ช่วย ผอ.','ผอ.กอง','ฝ่ายบัญชี','ผู้เชี่ยวชาญ','รองอธิบดี','อธิบดี'];
+    tbody.innerHTML = approvers.map((name, i) => {
+      const items    = data.filter(d => d.sequence_number === i+1);
+      const signed   = items.filter(d => d.status === 'เซ็นแล้ว').length;
+      const rejected = items.filter(d => d.status === 'ตีกลับ').length;
+      const waiting  = items.filter(d => d.status === 'ยังไม่เซ็น').length;
+      const pct      = Math.round((signed / (items.length || 1)) * 100);
+      return `<tr>
+        <td><span style="color:var(--gr4);margin-right:8px;font-size:11px;">0${i+1}</span>${name}</td>
+        <td style="text-align:center;"><span class="apv-num green">${signed}</span></td>
+        <td style="text-align:center;"><span class="apv-num amber">${waiting}</span></td>
+        <td style="text-align:center;"><span class="apv-num red">${rejected}</span></td>
+        <td><div style="display:flex;align-items:center;gap:8px;"><div class="apv-bar-bg"><div class="apv-bar-fill" style="width:${pct}%"></div></div><span style="font-size:11px;color:var(--gr5);min-width:28px;">${pct}%</span></div></td>
+      </tr>`;
+    }).join('');
+  } catch (_) { tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--r6);">เกิดข้อผิดพลาด</td></tr>'; }
+}
+
+// ══════════════════════════════════════════════
+//  APPROVAL WORKFLOW (เซ็น / ตีกลับ)
+// ══════════════════════════════════════════════
+async function handleNextStep(docId, currentStep, title) {
+  const { value: action } = await Swal.fire({
+    title: `จัดการขั้นตอนที่ ${currentStep}/7`,
+    text: `เรื่อง: ${title}`,
+    icon: 'question',
+    showCancelButton: true,
+    showDenyButton: true,
+    confirmButtonText: '✅ เซ็นแล้ว',
+    denyButtonText: '❌ ตีกลับ',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#006a4e',
+    denyButtonColor: '#DC2626'
+  });
+
+  if (action === true) {
+    // เซ็น
+    Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+    await sb.from('document_approvals')
+      .update({ status: 'เซ็นแล้ว', signed_at: new Date().toISOString() })
+      .eq('document_id', docId)
+      .eq('sequence_number', currentStep);
+
+    const isLast = currentStep >= 7;
+    const nextStep   = isLast ? 7 : currentStep + 1;
+    const nextStatus = isLast ? 'ส่งมอบสำเร็จ' : 'กำลังวนเซ็น';
+
+    await sb.from('documents')
+      .update({ status: nextStatus, current_step: nextStep, updated_at: new Date().toISOString() })
+      .eq('id', docId);
+
+    Swal.fire('สำเร็จ', isLast ? 'จบงานเรียบร้อย! 🎉' : 'ไปขั้นตอนที่ ' + nextStep, 'success');
+    loadDocs('all');
+
+  } else if (action === false) {
+    // ตีกลับ
+    const { value: reason } = await Swal.fire({
+      title: 'เหตุผลการตีกลับ',
+      input: 'text',
+      inputPlaceholder: 'ระบุเหตุผล...',
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันตีกลับ',
+      confirmButtonColor: '#DC2626',
+      cancelButtonText: 'ยกเลิก'
+    });
+    if (reason !== undefined && reason !== null) {
+      Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+      await sb.from('document_approvals')
+        .update({ status: 'ตีกลับ', remarks: reason || '—' })
+        .eq('document_id', docId)
+        .eq('sequence_number', currentStep);
+      await sb.from('documents')
+        .update({ status: 'ตีกลับ', updated_at: new Date().toISOString() })
+        .eq('id', docId);
+      Swal.fire('ตีกลับแล้ว', reason || '', 'error');
+      loadDocs('all');
+    }
+  }
+}
+
+// ══════════════════════════════════════════════
+//  TIMELINE DETAIL MODAL
+// ══════════════════════════════════════════════
+async function viewDetail(docId) {
+  const modal = document.getElementById('detailModal');
+  const content = document.getElementById('detailContent');
+  
+  if (!modal || !content) return;
+
+  modal.classList.add('open');
+  content.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลด...</div>';
+
+  try {
+    // เช็คว่า sb (Supabase) พร้อมไหม
+    if (typeof sb === 'undefined') throw new Error("ระบบเชื่อมต่อฐานข้อมูลไม่พร้อม");
+
+    const { data: doc, error: docErr } = await sb.from('documents').select('*').eq('id', docId).single();
+    if (docErr || !doc) throw new Error("ไม่พบข้อมูลเอกสาร");
+
+    const { data: steps } = await sb.from('document_approvals').select('*').eq('document_id', docId).order('sequence_number', { ascending: true });
+
+    // แก้ไข: ใช้ Optional Chaining ป้องกัน null 100%
+    const titleEl = document.getElementById('detailDocTitle');
+    if (titleEl) titleEl.innerText = doc.title || '';
+
+    const abcTag = doc.abc_analysis ? `<span class="tag tag-${doc.abc_analysis}">${doc.abc_analysis}</span>` : '';
+    const vedTag = doc.ved_analysis ? `<span class="tag tag-${doc.ved_analysis}">${doc.ved_analysis}</span>` : '';
+    
+    // ป้องกันการ Error จากไฟล์แนบ
+    const fileHTML = doc.file_url 
+      ? `<button class="btn-sm btn-green" onclick="previewPDF('${doc.file_url}','${(doc.title||'').replace(/'/g,"\\")}')">ดู PDF</button>` 
+      : 'ไม่มีไฟล์แนบ';
+
+    let timelineHTML = '';
+    (steps || []).forEach((s, i) => {
+      const isDone = s.status === 'เซ็นแล้ว';
+      timelineHTML += `
+        <div style="margin-bottom:10px; border-left: 2px solid ${isDone?'green':'#ccc'}; padding-left:10px;">
+          <b>${s.approver_name}</b> [${s.status}]
+        </div>`;
+    });
+
+    content.innerHTML = `
+      <div class="info-card" style="padding:15px; background:#f9f9f9; border-radius:8px; margin-bottom:15px;">
+        <div style="margin-bottom:10px;">${abcTag} ${vedTag}</div>
+        <div>${fileHTML}</div>
+      </div>
+      <div class="timeline">${timelineHTML || 'ไม่มีข้อมูลขั้นตอน'}</div>
+    `;
+
+  } catch (err) {
+    // ถ้ายังขึ้น Error เดิม ให้ดูตรงนี้ว่ามันบอกว่าอะไร
+    console.error("DEBUG:", err);
+    content.innerHTML = `<div style="padding:20px; color:red; text-align:center;">เกิดข้อผิดพลาด: ${err.message}</div>`;
+  }
+}
+// ══════════════════════════════════════════════
+//  QR CODE GENERATOR
+// ══════════════════════════════════════════════
+function viewQR(id, title) {
+  document.getElementById('qrcode-container').innerHTML = '';
+  const url = window.location.href.split('?')[0] + '?id=' + id;
+  new QRCode(document.getElementById('qrcode-container'), { text: url, width: 180, height: 180 });
+  document.getElementById('prevTitle').textContent = title;
+  document.getElementById('previewModal').classList.add('open');
+}
+function closeQR() { document.getElementById('previewModal').classList.remove('open'); }
+
+// ══════════════════════════════════════════════
+//  FILE UPLOAD + SUBMIT DOC
+// ══════════════════════════════════════════════
+async function uploadPDF(file, docId) {
+  const ext  = file.name.split('.').pop();
+  const name = `${docId}-${Date.now()}.${ext}`;
+  const { error } = await sb.storage.from('document-files').upload(name, file, { upsert: false });
+  if (error) throw error;
+  return sb.storage.from('document-files').getPublicUrl(name).data.publicUrl;
+}
+
+async function submitDoc() {
+  const btn = document.getElementById('btnSubmit');
+  if (btn.disabled) return;
+
+  const title = document.getElementById('subject').value.trim();
+  const desc  = document.getElementById('details').value.trim();
+  const file  = document.getElementById('pdfFile').files[0];
+  const abc   = document.getElementById('abcVal').value;
+  const ved   = document.getElementById('vedVal').value;
+
+  if (!title) { Swal.fire('แจ้งเตือน', 'กรุณาระบุชื่อเรื่อง', 'warning'); return; }
+  if (!currentUser) { Swal.fire('แจ้งเตือน', 'Session หมดอายุ กรุณา Login ใหม่', 'warning'); return; }
+
+  btn.disabled = true;
+  Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  try {
+    const docNo    = generateDocNo();
+    const insertData = {
+      doc_no      : docNo,
+      title       : title,
+      description : desc,
+      status      : 'สร้างเอกสาร',
+      current_step: 1,
+      created_by  : currentUser.id,
+      updated_at  : new Date().toISOString()
+    };
+    if (abc) insertData.abc_analysis = abc;
+    if (ved) insertData.ved_analysis = ved;
+
+    const { data: newDoc, error } = await sb.from('documents').insert([insertData]).select();
+    if (error) throw error;
+    if (!newDoc?.length) throw new Error('ไม่สามารถบันทึกได้ — กรุณาตรวจสอบ RLS Policy');
+
+    const docId = newDoc[0].id;
+
+    if (file) {
+      const url = await uploadPDF(file, docId);
+      await sb.from('documents').update({ file_url: url }).eq('id', docId);
+    }
+
+    const approvers = ['หัวหน้าแผนก','ผู้ช่วย ผอ.','ผอ.กอง','ฝ่ายบัญชี','ผู้เชี่ยวชาญ','รองอธิบดี','อธิบดี'];
+    await sb.from('document_approvals').insert(
+      approvers.map((n, i) => ({ document_id: docId, approver_name: n, sequence_number: i+1, status: 'ยังไม่เซ็น' }))
+    );
+
+    Swal.fire('สำเร็จ!', `สร้างเอกสาร ${docNo} เรียบร้อยแล้ว`, 'success');
+    ['subject','details'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('pdfFile').value = '';
+    document.getElementById('fileNameDisplay').textContent = '';
+    document.getElementById('abcVal').value = '';
+    document.getElementById('vedVal').value = '';
+    toggleCompose();
+    loadDocs('all');
+  } catch (err) {
+    Swal.fire('Error', err.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+async function processDocSubmit() {
+  const title = document.getElementById('compSubject').value.trim();
+  const desc = document.getElementById('compDesc').value.trim();
+  const abc = document.getElementById('compABC').value;
+  const ved = document.getElementById('compVED').value;
+  const fileInput = document.getElementById('compFile');
+  const btn = document.getElementById('submitBtn');
+
+  if (!title) return Swal.fire('กรุณาระบุชื่อเรื่อง', '', 'warning');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+  try {
+    let fileUrl = null;
+    // 1. อัปโหลดไฟล์ PDF (ถ้ามี)
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const fileName = `${Date.now()}_${file.name}`;
+      const { data, error: upErr } = await sb.storage.from('document-files').upload(fileName, file);
+      if (upErr) throw upErr;
+      const { data: urlData } = sb.storage.from('document-files').getPublicUrl(fileName);
+      fileUrl = urlData.publicUrl;
+    }
+
+    // 2. บันทึกข้อมูลลงตาราง documents
+    const docNo = generateDocNo();
+    const { data: newDoc, error: docErr } = await sb.from('documents').insert([{
+      doc_no: docNo,
+      title: title,
+      description: desc,
+      abc_analysis: abc,
+      ved_analysis: ved,
+      file_url: fileUrl,
+      status: 'สร้างเอกสาร',
+      current_step: 1,
+      creator_id: currentUser.id
+    }]).select().single();
+
+    if (docErr) throw docErr;
+
+    // 3. สร้างรายการอนุมัติ 7 ขั้นตอน (Approvals Loop)
+    const approvers = ['หัวหน้าแผนก', 'ผู้ช่วย ผอ.', 'ผอ.กอง', 'ฝ่ายบัญชี', 'ผู้เชี่ยวชาญ', 'รองอธิบดี', 'อธิบดี'];
+    const approvalRows = approvers.map((name, index) => ({
+      document_id: newDoc.id,
+      approver_name: name,
+      sequence_number: index + 1,
+      status: 'ยังไม่เซ็น'
+    }));
+
+    const { error: apvErr } = await sb.from('document_approvals').insert(approvalRows);
+    if (apvErr) throw apvErr;
+
+    await Swal.fire('สำเร็จ!', `สร้างเอกสาร ${docNo} เรียบร้อยแล้ว`, 'success');
+    toggleCompose(); // ปิด Modal
+    loadDocs('all'); // โหลดตารางใหม่
+
+  } catch (e) {
+    console.error(e);
+    Swal.fire('เกิดข้อผิดพลาด', e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ส่งเอกสารเข้าสู่ระบบ';
+  }
+}
+function viewQR(docId, title) {
+  const qrContainer = document.getElementById('qrcode-canvas');
+  qrContainer.innerHTML = ''; // ล้างค่าเก่า
+  
+  // สร้าง QR Code (ต้องโหลด library qrcode.js ในหน้า HTML ด้วย)
+  new QRCode(qrContainer, {
+    text: docId, // ใช้ ID ของเอกสารเป็นข้อมูลใน QR
+    width: 200,
+    height: 200,
+    colorDark: "#006a4e", // สีเขียวอภัยภูเบศร
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  document.getElementById('qrModalTitle').textContent = title;
+  document.getElementById('qrModal').classList.add('open');
+}
+
+function closeQR() {
+  document.getElementById('qrModal').classList.remove('open');
+}
+async function viewDetail(docId) {
+  const modal = document.getElementById('detailModal');
+  const content = document.getElementById('detailContent');
+  modal.classList.add('open');
+  content.innerHTML = '<div class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดรายละเอียด...</div>';
+
+  try {
+    const { data: doc } = await sb.from('documents').select('*').eq('id', docId).single();
+    const { data: steps } = await sb.from('document_approvals').select('*').eq('document_id', docId).order('sequence_number', { ascending: true });
+
+    document.getElementById('detailDocTitle').textContent = doc.title;
+    document.getElementById('detailDocNo').textContent = doc.doc_no || ('DOC-' + doc.id);
+
+    let html = `
+      <div class="doc-info-grid">
+        <div><strong>สถานะปัจจุบัน:</strong> ${doc.status}</div>
+        <div><strong>ลำดับความสำคัญ:</strong> ${doc.abc_analysis || '-'} / ${doc.ved_analysis || '-'}</div>
+      </div>
+      <div class="timeline-container">
+    `;
+
+    steps.forEach(s => {
+      const isDone = s.status === 'เซ็นแล้ว';
+      const isReject = s.status === 'ตีกลับ';
+      const icon = isDone ? 'fa-check-circle' : (isReject ? 'fa-times-circle' : 'fa-circle');
+      const color = isDone ? 'text-green' : (isReject ? 'text-red' : 'text-gray');
+
+      html += `
+        <div class="timeline-row ${isDone ? 'active' : ''}">
+          <div class="timeline-icon ${color}"><i class="fa-solid ${icon}"></i></div>
+          <div class="timeline-body">
+            <div class="timeline-header">
+              <span class="approver-name">ขั้นตอนที่ ${s.sequence_number}: ${s.approver_name}</span>
+              <span class="approver-status ${color}">${s.status}</span>
+            </div>
+            ${s.signed_at ? `<div class="timeline-time">วันที่: ${new Date(s.signed_at).toLocaleString('th-TH')}</div>` : ''}
+            ${s.remarks ? `<div class="timeline-remark">หมายเหตุ: ${s.remarks}</div>` : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    content.innerHTML = html;
+
+  } catch (err) {
+    content.innerHTML = `<div class="error-state">ไม่สามารถโหลดข้อมูลได้: ${err.message}</div>`;
+  }
+}
+
+function closeDetail() {
+  document.getElementById('detailModal').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════
+//  INIT — ตรวจ URL param ?id= (QR scan)
+// ══════════════════════════════════════════════
+window.onload = () => {
+  pendingQrId = new URLSearchParams(window.location.search).get('id') || null;
+  // ถ้ายังไม่ login ก็ให้ auth screen ทำงานก่อน
+  // processPendingQR จะถูกเรียกใน initSession หลัง login สำเร็จ
+};
 </script>
 </body>
 </html>
