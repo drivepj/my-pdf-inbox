@@ -344,6 +344,51 @@ td{padding:11px 14px;vertical-align:middle;font-size:13px}
   .stat-value{font-size:20px}
   .stat-card{padding:12px 10px 10px}
 }
+
+/* ══ Bottom Nav Bar (mobile) ══ */
+.bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--g9);border-top:2px solid var(--gold);
+  z-index:60;padding:0;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.bottom-nav-items{display:flex;align-items:stretch}
+.bnav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:9px 4px 8px;cursor:pointer;
+  color:rgba(255,255,255,.5);font-size:9px;font-weight:600;letter-spacing:.04em;
+  border:none;background:none;font-family:inherit;transition:all .15s;
+  position:relative;
+}
+.bnav-item i{font-size:18px;line-height:1}
+.bnav-item.active{color:var(--gold)}
+.bnav-item.active i{color:var(--gold)}
+.bnav-item:active{background:rgba(255,255,255,.08)}
+.bnav-badge{
+  position:absolute;top:6px;right:calc(50% - 14px);
+  background:var(--r6);color:#fff;font-size:9px;font-weight:700;
+  min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 3px;
+}
+.bnav-compose{
+  background:var(--gold);color:var(--g9) !important;
+  border-radius:50%;width:44px;height:44px;margin:-8px auto 0;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);flex-shrink:0;
+}
+.bnav-compose i{font-size:20px !important;color:var(--g9) !important}
+
+@media (max-width:768px){
+  .bottom-nav{display:block}
+  .main{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
+}
+
+/* Pending user cards */
+.pending-user-card{background:var(--surf);border:2px solid var(--a6);border-radius:var(--rad);padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.pending-user-card .user-avatar-lg{background:var(--a6)}
+.pending-section-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--a6);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.approved-section-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gr5);margin:16px 0 10px;display:flex;align-items:center;gap:6px}
 </style>
 </head>
 <body>
@@ -534,14 +579,51 @@ td{padding:11px 14px;vertical-align:middle;font-size:13px}
 
     <!-- Users Page -->
     <div id="page-users" class="page">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <div class="section-title" style="margin-bottom:0;"><i class="fa-solid fa-users"></i> ผู้ใช้ทั้งหมด</div>
-        <button class="btn-sm btn-green" onclick="openCreateUser()"><i class="fa-solid fa-user-plus"></i> สร้างบัญชีผู้ใช้</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-sm btn-ghost" onclick="showRLSGuide()" title="วิธีแก้ RLS Supabase"><i class="fa-solid fa-database" style="color:var(--a6);"></i> SQL Guide</button>
+          <button class="btn-sm btn-amber" onclick="syncMissingUsers()" id="btnSyncUsers"><i class="fa-solid fa-arrows-rotate"></i> Sync ผู้ใช้</button>
+          <button class="btn-sm btn-green" onclick="openCreateUser()"><i class="fa-solid fa-user-plus"></i> สร้างบัญชี</button>
+        </div>
       </div>
+      <div id="rlsWarning" style="display:none;background:var(--a1);border:1px solid #E8D5A0;border-radius:8px;padding:12px 14px;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--a6);margin-bottom:6px;"><i class="fa-solid fa-triangle-exclamation"></i> มีผู้ใช้ใน Supabase Auth แต่ไม่มีในตาราง users</div>
+        <div style="font-size:11px;color:var(--gr7);">กด "Sync ผู้ใช้" เพื่อพยายามดึงข้อมูล หรือเพิ่มด้วยตนเองผ่านปุ่ม "สร้างบัญชี"</div>
+      </div>
+      <div id="pendingList"></div>
       <div id="approvedList"><div style="color:var(--gr5);font-size:13px;padding:16px 0;">กำลังโหลด...</div></div>
     </div>
   </main>
 </div>
+
+<!-- Bottom Nav Bar (mobile only) -->
+<nav class="bottom-nav" id="bottomNav">
+  <div class="bottom-nav-items">
+    <button class="bnav-item active" id="bnav-docs" onclick="bnav('docs')">
+      <i class="fa-solid fa-layer-group"></i>เอกสาร
+      <span class="bnav-badge" id="bnav-badge-docs" style="display:none;"></span>
+    </button>
+    <button class="bnav-item" id="bnav-mydocs" style="display:none" onclick="bnav('mydocs')">
+      <i class="fa-solid fa-inbox"></i>รอเซ็น
+      <span class="bnav-badge" id="bnav-badge-mydocs" style="display:none;"></span>
+    </button>
+    <button class="bnav-item" id="bnav-compose" style="display:none" onclick="toggleCompose()">
+      <div class="bnav-compose"><i class="fa-solid fa-plus"></i></div>
+      <span style="margin-top:6px;">สร้าง</span>
+    </button>
+    <button class="bnav-item" id="bnav-dashboard" style="display:none" onclick="bnav('dashboard')">
+      <i class="fa-solid fa-chart-pie"></i>Dashboard
+    </button>
+    <button class="bnav-item" id="bnav-users" style="display:none" onclick="bnav('users')">
+      <i class="fa-solid fa-users-gear"></i>ผู้ใช้
+      <span class="bnav-badge" id="bnav-badge-users" style="display:none;"></span>
+    </button>
+    <button class="bnav-item" id="bnav-messenger" style="display:none" onclick="bnav('messenger')">
+      <i class="fa-solid fa-person-walking"></i>งานของฉัน
+    </button>
+  </div>
+</nav>
 
 <!-- Compose Modal -->
 <div class="compose-modal" id="composeModal">
@@ -741,6 +823,36 @@ function closeSidebar(){
   safeEl('sidebarOverlay').classList.remove('open');
 }
 
+// ── Bottom Nav (mobile) ──────────────────────
+function bnav(target){
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
+  const btn=safeEl('bnav-'+target);
+  if(btn) btn.classList.add('active');
+  if(target==='docs'){ switchPage('docs'); loadDocs('all'); }
+  else if(target==='mydocs'){ switchPage('docs'); loadMyDocs(); }
+  else if(target==='dashboard'){ switchPage('dashboard'); }
+  else if(target==='users'){ switchPage('users'); }
+  else if(target==='messenger'){ switchPage('docs'); loadDocs('รับโดย Messenger'); }
+}
+function setupBottomNav(userRole){
+  ['bnav-mydocs','bnav-compose','bnav-dashboard','bnav-users','bnav-messenger']
+    .forEach(id=>{ const el=safeEl(id); if(el) el.style.display='none'; });
+  if(isAdmin){
+    safeEl('bnav-compose').style.display='flex';
+    safeEl('bnav-dashboard').style.display='flex';
+    safeEl('bnav-users').style.display='flex';
+  } else if(userRole==='staff'){
+    safeEl('bnav-compose').style.display='flex';
+  } else if(userRole==='store'){
+    safeEl('bnav-compose').style.display='flex';
+    safeEl('bnav-dashboard').style.display='flex';
+  } else if(userRole==='approver'){
+    safeEl('bnav-mydocs').style.display='flex';
+  } else if(userRole==='messenger'){
+    safeEl('bnav-messenger').style.display='flex';
+  }
+}
+
 // ══════════════════════════════════════════════
 //  AUTH
 // ══════════════════════════════════════════════
@@ -824,6 +936,7 @@ function initSession(userData){
   const roleBadgeClass={admin:'role-admin',staff:'role-staff',messenger:'role-messenger',approver:'role-approver',store:'role-approver'}[isAdmin?'admin':userRole]||'role-staff';
   safeEl('userRole').innerHTML=`<span class="role-badge-ui ${roleBadgeClass}">${roleLabel}</span> ${deptLabel}`;
 
+  setupBottomNav(userRole);
   loadDocs('all');
   updateStats();
   if(pendingQrId) processPendingQR();
@@ -838,13 +951,28 @@ async function doRegister(){
   if(pass.length<6){ errEl.textContent='รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'; return; }
   const btn=safeEl('regBtn'); btn.disabled=true; btn.textContent='กำลังส่งคำขอ...';
   try {
+    // Step 1: สมัคร auth
     const { data:authData, error:authErr } = await sb.auth.signUp({ email, password:pass });
     if(authErr){ errEl.textContent=authErr.message; return; }
+    if(!authData?.user?.id){ errEl.textContent='ไม่ได้รับ user ID กรุณาลองใหม่'; return; }
+
+    // Step 2: บันทึก profile (ต้องมี RLS policy: allow insert for anon/authenticated)
     const { error:profileErr } = await sb.from('users').insert([{
       auth_uid:authData.user.id, full_name:fullName, email, position, department:dept,
       status:'pending', role:'staff', created_at:new Date().toISOString()
     }]);
-    if(profileErr){ errEl.textContent=profileErr.message; return; }
+
+    if(profileErr){
+      // Insert ล้มเหลว — แจ้ง admin ให้เปิด RLS
+      errEl.innerHTML=`บันทึกข้อมูลไม่ได้: <b>${esc(profileErr.message)}</b><br>
+        <span style="font-size:11px;">Admin กรุณาเพิ่ม RLS policy ใน Supabase (ดูปุ่ม SQL ด้านล่าง)</span>`;
+      // ยังแสดง ok เพราะ auth account ถูกสร้างแล้ว
+      okEl.innerHTML='<i class="fa-solid fa-circle-check"></i> บัญชีถูกสร้างแล้ว แต่ต้องให้ Admin เพิ่ม RLS policy ก่อนจึงจะเห็นชื่อในระบบ';
+      okEl.style.display='block';
+      return;
+    }
+
+    okEl.innerHTML='<i class="fa-solid fa-circle-check"></i> ส่งคำขอเรียบร้อยแล้ว! กรุณารอ Admin อนุมัติก่อนเข้าใช้งาน';
     okEl.style.display='block';
     ['regFullName','regEmail','regPass','regPosition'].forEach(id=>safeEl(id).value='');
     safeEl('regDept').value='';
@@ -864,37 +992,159 @@ function doLogout(){
 //  USER MANAGEMENT
 // ══════════════════════════════════════════════
 async function loadPendingCount(){
-  const { data } = await sb.from('users').select('id').eq('status','pending');
-  const count=data?.length||0;
+  // fetch all then filter — avoids RLS blocking eq('status','pending')
+  const { data } = await sb.from('users').select('id,status');
+  const count=(data||[]).filter(u=>u.status==='pending').length;
   const badge=safeEl('nb-requests');
   if(badge){ badge.textContent=count; badge.style.display=count>0?'':'none'; }
+  const bb=safeEl('bnav-badge-users');
+  if(bb){ bb.textContent=count; bb.style.display=count>0?'flex':'none'; }
 }
 
-async function loadUsersPage(){ await loadApprovedUsers(); }
+async function loadUsersPage(){
+  // โหลดครั้งเดียว แล้วส่งต่อทั้งสองฟังก์ชัน
+  const { data, error }=await sb.from('users').select('*').order('created_at',{ascending:false});
 
-async function loadApprovedUsers(){
-  const container=safeEl('approvedList');
-  container.innerHTML='<div style="color:var(--gr5);font-size:13px;">กำลังโหลด...</div>';
-  const { data } = await sb.from('users').select('*').eq('status','approved').order('full_name',{ascending:true});
-  if(!data?.length){ container.innerHTML='<div style="color:var(--gr5);font-size:13px;padding:12px 0;">ยังไม่มีผู้ใช้</div>'; return; }
-  const roleLabels={admin:'ผู้ดูแลระบบ',staff:'เจ้าหน้าที่',messenger:'Messenger',approver:'ผู้อนุมัติ',store:'คลังพัสดุ'};
-  const roleClass={admin:'role-admin',staff:'role-staff',messenger:'role-messenger',approver:'role-approver',store:'role-approver'};
-  const stepNames=['','หัวหน้าแผนก','ผู้ช่วย ผอ.','ผอ.กอง','ฝ่ายบัญชี','ผู้เชี่ยวชาญ','รองอธิบดี','อธิบดี'];
-  container.innerHTML=data.map(u=>{
-    const name=u.full_name||'ไม่ระบุ', role=u.role||'staff';
-    const roleBadge=`<span class="role-badge-ui ${roleClass[role]||'role-staff'}">${roleLabels[role]||role}${role==='approver'&&u.approval_step?' · '+stepNames[u.approval_step]:''}</span>`;
-    return `<div class="user-card">
-      <div class="user-avatar-lg">${esc(name[0]||'U').toUpperCase()}</div>
-      <div class="user-info">
-        <div class="user-name">${esc(name)} ${roleBadge}</div>
-        <div class="user-meta">${esc(u.email||'—')} · ${esc(u.position||'—')} · ${esc(u.department||'—')}</div>
+  // แสดง debug banner ถ้า error หรือดึงได้น้อยกว่าที่ควร
+  const debugBanner=safeEl('rlsWarning');
+  if(debugBanner){
+    if(error){
+      debugBanner.style.display='block';
+      debugBanner.innerHTML=`<div style="font-size:12px;font-weight:700;color:#DC2626;margin-bottom:4px;">
+        <i class="fa-solid fa-triangle-exclamation"></i> RLS Error: ${esc(error.message)}</div>
+        <div style="font-size:11px;color:#374151;">กด <b>SQL Guide</b> เพื่อดูวิธีแก้ RLS Policy ใน Supabase</div>`;
+    } else {
+      debugBanner.style.display='none';
+    }
+  }
+
+  renderPendingUsers(data, error);
+  renderApprovedUsers(data, error);
+
+  // อัพเดท badge
+  const pendingCount=(data||[]).filter(u=>u.status==='pending').length;
+  const badge=safeEl('nb-requests');
+  if(badge){ badge.textContent=pendingCount; badge.style.display=pendingCount>0?'':'none'; }
+  const bb=safeEl('bnav-badge-users');
+  if(bb){ bb.textContent=pendingCount; bb.style.display=pendingCount>0?'flex':'none'; }
+}
+
+function renderPendingUsers(data, error){
+  const container=safeEl('pendingList');
+  if(!container) return;
+
+  const pending=(data||[]).filter(u=>u.status==='pending');
+  if(error){
+    container.innerHTML=`<div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;color:#DC2626;margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation"></i> โหลดข้อมูลไม่ได้ — อาจมีปัญหา RLS Policy</div>
+      <div style="font-size:11px;color:#991B1B;">${esc(error.message)}</div>
+    </div>`;
+    return;
+  }
+  if(!pending.length){ container.innerHTML=''; return; }
+
+  container.innerHTML=`<div class="pending-section-label">
+    <i class="fa-solid fa-clock"></i> รออนุมัติ (${pending.length} คน)
+  </div>`+pending.map(u=>{
+    const name=u.full_name||'ไม่ระบุ';
+    return `<div class="pending-user-card">
+      <div class="user-avatar-lg" style="background:var(--a6);flex-shrink:0;">${esc((name[0]||'?').toUpperCase())}</div>
+      <div class="user-info" style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:var(--gr9);margin-bottom:2px;">${esc(name)}</div>
+        <div style="font-size:11px;color:var(--gr5);">${esc(u.email||'—')}</div>
+        <div style="font-size:11px;color:var(--gr5);">${esc(u.position||'—')} · ${esc(u.department||'—')}</div>
+        <div style="margin-top:4px;"><span style="background:var(--a1);color:var(--a6);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;"><i class="fa-solid fa-clock" style="margin-right:3px;"></i>รออนุมัติ</span></div>
       </div>
-      <div class="user-actions">
-        <button class="btn-sm btn-ghost" data-uid="${esc(u.id)}" onclick="openEditRole(this.dataset.uid)"><i class="fa-solid fa-pen"></i> แก้ role</button>
-        <button class="btn-sm btn-danger-o" data-uid="${esc(u.id)}" data-name="${esc(name)}" onclick="revokeUser(this.dataset.uid,this.dataset.name)"><i class="fa-solid fa-ban"></i> ระงับ</button>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+        <button class="btn-sm btn-green" data-uid="${esc(u.id)}" data-name="${esc(name)}" onclick="approveUser(this.dataset.uid,this.dataset.name)">
+          <i class="fa-solid fa-check"></i> อนุมัติ
+        </button>
+        <button class="btn-sm btn-danger-o" data-uid="${esc(u.id)}" data-name="${esc(name)}" onclick="rejectUser(this.dataset.uid,this.dataset.name)">
+          <i class="fa-solid fa-xmark"></i> ปฏิเสธ
+        </button>
       </div>
     </div>`;
   }).join('');
+}
+
+async function approveUser(id,name){
+  // เลือก role ก่อนอนุมัติ
+  const stepNames=['','หัวหน้าแผนก','ผู้ช่วย ผอ.','ผอ.กอง','ฝ่ายบัญชี','ผู้เชี่ยวชาญ','รองอธิบดี','อธิบดี'];
+  const { value:formValues }=await Swal.fire({
+    title:`อนุมัติบัญชี`,
+    html:`<div style="text-align:left;margin-bottom:12px;"><b>${esc(name)}</b></div>
+      <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">กำหนด Role</label>
+      <select id="ap-role" style="width:100%;padding:9px;border:1px solid #E5E7EB;border-radius:7px;font-size:14px;margin-bottom:10px;">
+        <option value="staff">Staff — เจ้าหน้าที่</option>
+        <option value="store">Store — คลังพัสดุ</option>
+        <option value="messenger">Messenger — รับ-ส่งเอกสาร</option>
+        <option value="approver">Approver — ผู้อนุมัติ</option>
+      </select>
+      <div id="ap-step-wrap" style="display:none;">
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">ขั้นตอนที่รับผิดชอบ</label>
+        <select id="ap-step" style="width:100%;padding:9px;border:1px solid #E5E7EB;border-radius:7px;font-size:14px;">
+          ${stepNames.slice(1).map((n,i)=>`<option value="${i+1}">${i+1} — ${n}</option>`).join('')}
+        </select>
+      </div>`,
+    didOpen:()=>{
+      document.getElementById('ap-role').addEventListener('change',function(){
+        document.getElementById('ap-step-wrap').style.display=this.value==='approver'?'block':'none';
+      });
+    },
+    showCancelButton:true,
+    confirmButtonText:'✅ อนุมัติ',
+    confirmButtonColor:'#006a4e',
+    cancelButtonText:'ยกเลิก',
+    preConfirm:()=>({
+      role: document.getElementById('ap-role').value,
+      step: document.getElementById('ap-step')?.value||null
+    })
+  });
+  if(!formValues) return;
+  const updateData={ status:'approved', role:formValues.role, approval_step:null };
+  if(formValues.role==='approver'&&formValues.step) updateData.approval_step=parseInt(formValues.step);
+  const { error }=await sb.from('users').update(updateData).eq('id',id);
+  if(error) return Swal.fire('Error',error.message,'error');
+  Swal.fire({icon:'success',title:'อนุมัติแล้ว',html:`<b>${esc(name)}</b> สามารถเข้าใช้งานได้แล้ว`,timer:2000,showConfirmButton:false});
+  loadUsersPage(); loadPendingCount();
+}
+
+async function rejectUser(id,name){
+  const res=await Swal.fire({
+    title:`ปฏิเสธ ${name}?`,text:'บัญชีจะถูกลบออกจากระบบ',icon:'warning',
+    showCancelButton:true,confirmButtonText:'ปฏิเสธ',confirmButtonColor:'#DC2626',cancelButtonText:'ยกเลิก'
+  });
+  if(!res.isConfirmed) return;
+  await sb.from('users').delete().eq('id',id);
+  Swal.fire({icon:'info',title:'ปฏิเสธแล้ว',timer:1500,showConfirmButton:false});
+  loadUsersPage(); loadPendingCount();
+}
+
+function renderApprovedUsers(data, error){
+  const container=safeEl('approvedList');
+  if(!container) return;
+  const approved=(data||[]).filter(u=>u.status==='approved').sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||'','th'));
+  if(error||!approved.length){ container.innerHTML='<div style="color:var(--gr5);font-size:13px;padding:12px 0;">ยังไม่มีผู้ใช้ที่อนุมัติแล้ว</div>'; return; }
+  const roleLabels={admin:'ผู้ดูแลระบบ',staff:'เจ้าหน้าที่',messenger:'Messenger',approver:'ผู้อนุมัติ',store:'คลังพัสดุ'};
+  const roleClass={admin:'role-admin',staff:'role-staff',messenger:'role-messenger',approver:'role-approver',store:'role-approver'};
+  const stepNames=['','หัวหน้าแผนก','ผู้ช่วย ผอ.','ผอ.กอง','ฝ่ายบัญชี','ผู้เชี่ยวชาญ','รองอธิบดี','อธิบดี'];
+  const html=`<div class="approved-section-label"><i class="fa-solid fa-users"></i> ผู้ใช้ที่อนุมัติแล้ว (${approved.length} คน)</div>`
+    +approved.map(u=>{
+      const name=u.full_name||'ไม่ระบุ', role=u.role||'staff';
+      const roleBadge=`<span class="role-badge-ui ${roleClass[role]||'role-staff'}">${roleLabels[role]||role}${role==='approver'&&u.approval_step?' · '+stepNames[u.approval_step]:''}</span>`;
+      return `<div class="user-card">
+        <div class="user-avatar-lg">${esc(name[0]||'U').toUpperCase()}</div>
+        <div class="user-info">
+          <div class="user-name">${esc(name)} ${roleBadge}</div>
+          <div class="user-meta">${esc(u.email||'—')} · ${esc(u.position||'—')} · ${esc(u.department||'—')}</div>
+        </div>
+        <div class="user-actions">
+          <button class="btn-sm btn-ghost" data-uid="${esc(u.id)}" onclick="openEditRole(this.dataset.uid)"><i class="fa-solid fa-pen"></i> แก้ role</button>
+          <button class="btn-sm btn-danger-o" data-uid="${esc(u.id)}" data-name="${esc(name)}" onclick="revokeUser(this.dataset.uid,this.dataset.name)"><i class="fa-solid fa-ban"></i> ระงับ</button>
+        </div>
+      </div>`;
+    }).join('');
+  container.innerHTML=html;
 }
 
 async function revokeUser(id,name){
@@ -902,6 +1152,101 @@ async function revokeUser(id,name){
   if(!res.isConfirmed) return;
   await sb.from('users').update({status:'pending'}).eq('id',id);
   Swal.fire('ระงับแล้ว','','info'); loadUsersPage(); loadPendingCount();
+}
+
+function showRLSGuide(){
+  Swal.fire({
+    title:'🔧 วิธีแก้ RLS Policy ใน Supabase',
+    width:'680px',
+    html:`<div style="text-align:left;font-size:13px;">
+      <p style="margin-bottom:10px;color:#374151;">เข้า <b>Supabase Dashboard → SQL Editor</b> แล้ว Run SQL ด้านล่างนี้:</p>
+      <div style="background:#1e1e2e;border-radius:8px;padding:14px;margin-bottom:12px;overflow-x:auto;">
+        <pre style="color:#cdd6f4;font-size:11px;white-space:pre-wrap;font-family:monospace;margin:0;">-- 1. ให้ anon/authenticated INSERT ได้ (สมัครสมาชิก)
+CREATE POLICY "allow_insert_own_profile"
+ON public.users FOR INSERT
+WITH CHECK (auth.uid() = auth_uid);
+
+-- 2. ให้ authenticated SELECT ได้ทุก row (Admin ดูได้ทั้งหมด)
+CREATE POLICY "allow_select_all_authenticated"
+ON public.users FOR SELECT
+TO authenticated
+USING (true);
+
+-- 3. ให้ authenticated UPDATE ได้ (อนุมัติ/แก้ไข)
+CREATE POLICY "allow_update_authenticated"
+ON public.users FOR UPDATE
+TO authenticated
+USING (true);
+
+-- 4. ให้ authenticated DELETE ได้ (ปฏิเสธ/ลบ)
+CREATE POLICY "allow_delete_authenticated"
+ON public.users FOR DELETE
+TO authenticated
+USING (true);
+
+-- ตรวจสอบว่า RLS เปิดอยู่
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;</pre>
+      </div>
+      <p style="font-size:12px;color:#6B7280;">⚠️ ถ้ามี policy เดิมอยู่แล้ว ให้ DROP ก่อน หรือใช้ <b>CREATE POLICY IF NOT EXISTS</b></p>
+    </div>`,
+    confirmButtonText:'คัดลอก SQL',
+    confirmButtonColor:'#006a4e',
+    showCancelButton:true,
+    cancelButtonText:'ปิด',
+    preConfirm:()=>{
+      const sql = `-- 1. INSERT policy
+CREATE POLICY "allow_insert_own_profile" ON public.users FOR INSERT WITH CHECK (auth.uid() = auth_uid);
+-- 2. SELECT policy  
+CREATE POLICY "allow_select_all_authenticated" ON public.users FOR SELECT TO authenticated USING (true);
+-- 3. UPDATE policy
+CREATE POLICY "allow_update_authenticated" ON public.users FOR UPDATE TO authenticated USING (true);
+-- 4. DELETE policy
+CREATE POLICY "allow_delete_authenticated" ON public.users FOR DELETE TO authenticated USING (true);
+-- Enable RLS
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;`;
+      navigator.clipboard.writeText(sql).catch(()=>{});
+      return true;
+    }
+  });
+}
+
+async function syncMissingUsers(){
+  // ดึง users ทั้งหมดจาก public.users และแสดงสถานะ
+  const btn=safeEl('btnSyncUsers');
+  if(btn){ btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> กำลัง Sync...'; }
+  try {
+    const { data, error }=await sb.from('users').select('*').order('created_at',{ascending:false});
+    if(error){
+      Swal.fire({
+        icon:'error',
+        title:'ดึงข้อมูลไม่ได้',
+        html:`<div style="text-align:left;font-size:13px;">
+          <b style="color:#DC2626;">${esc(error.message)}</b><br><br>
+          <span style="color:#374151;">สาเหตุที่พบบ่อย: <b>RLS Policy</b> ไม่ได้เปิดให้ Admin อ่านได้<br>
+          กด "SQL Guide" เพื่อดูวิธีแก้ไข</span>
+        </div>`
+      });
+      return;
+    }
+    const total=data?.length||0;
+    const pending=data?.filter(u=>u.status==='pending').length||0;
+    const approved=data?.filter(u=>u.status==='approved').length||0;
+    Swal.fire({
+      icon:'success',
+      title:'Sync เสร็จแล้ว',
+      html:`<div style="font-size:14px;">
+        พบผู้ใช้ใน table ทั้งหมด <b>${total}</b> คน<br>
+        <span style="color:var(--a6);">⏳ รออนุมัติ: <b>${pending}</b> คน</span><br>
+        <span style="color:var(--g7);">✅ อนุมัติแล้ว: <b>${approved}</b> คน</span>
+        ${total===0?'<br><br><span style="color:#DC2626;font-size:12px;">⚠️ ไม่พบข้อมูลเลย — RLS อาจบล็อก กด SQL Guide</span>':''}
+      </div>`,
+      timer:3000,
+      showConfirmButton:false
+    });
+    loadUsersPage();
+  } finally {
+    if(btn){ btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-arrows-rotate"></i> Sync ผู้ใช้'; }
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1024,6 +1369,9 @@ async function updateStats(){
           r=data.filter(d=>d.status==='ตีกลับ').length;
     safeSet('sc-total',t); safeSet('sc-pending',p); safeSet('sc-done',dn); safeSet('sc-rejected',r);
     safeSet('nb-all',t); safeSet('nb-pending',p);
+    // sync bottom nav docs badge
+    const bbd=safeEl('bnav-badge-docs');
+    if(bbd){ if(p>0){bbd.textContent=p;bbd.style.display='flex';}else{bbd.style.display='none';} }
   } catch(e){}
 }
 
@@ -1466,6 +1814,8 @@ async function loadMyDocsCount(){
   const count=data?.length||0;
   const badge=safeEl('nb-mydocs');
   if(badge){ badge.textContent=count; badge.style.display=count>0?'':'none'; }
+  const bbn=safeEl('bnav-badge-mydocs');
+  if(bbn){ bbn.textContent=count; bbn.style.display=count>0?'flex':'none'; }
 }
 
 // ══════════════════════════════════════════════
